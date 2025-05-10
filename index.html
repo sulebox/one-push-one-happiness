@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One push one happiness</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Clubhouse-inspired Color Palette */
+        :root {
+            --bg-main: #f0ede6; /* Off-white, slightly beige background */
+            --bg-card: #ffffff; /* White for cards */
+            --text-primary: #333333; /* Dark gray for primary text */
+            --text-secondary: #5c5c5c; /* Medium gray for secondary text */
+            --accent-primary: #5a8dee; /* A friendly, muted blue for primary actions */
+            --accent-primary-hover: #4a7bdc;
+            --accent-secondary: #e7e7e1; /* Light beige for outlines or secondary elements */
+            --accent-secondary-hover: #dcd9d1;
+            --border-color: #d1cdc7; /* Subtle border color */
+            --highlight-bg: #e8e5dd; /* Highlight for hover, today in calendar */
+            --completed-mark: #50c878; /* A gentle green for completed mark */
+            --icon-color-default: #7b92a8; /* Muted icon color */
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+        }
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 16px; /* Slightly more rounded */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05), 0 3px 6px rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.07), 0 6px 12px rgba(0, 0, 0, 0.05);
+        }
+        .suggestion-card {
+            cursor: grab;
+            user-select: none;
+            touch-action: pan-y;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-card); /* Ensure it's distinct if body is very similar */
+        }
+        .suggestion-card.dragging {
+            cursor: grabbing;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1), 0 8px 15px rgba(0,0,0,0.08);
+            transform: scale(1.02);
+        }
+        .btn {
+            border-radius: 20px; /* Pill-shaped buttons */
+            padding: 10px 24px;
+            font-weight: 600; /* Slightly bolder */
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
+            border: none; /* Remove default border for cleaner look */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .btn:hover {
+             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+             transform: translateY(-2px);
+        }
+        .btn-primary {
+            background-color: var(--accent-primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: var(--accent-primary-hover);
+        }
+        .btn-primary:disabled {
+            background-color: #a0aec0; /* Gray-400 for disabled */
+            cursor: not-allowed;
+        }
+        .btn-outline {
+            background-color: var(--bg-card);
+            border: 1.5px solid var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        .btn-outline:hover {
+            background-color: var(--highlight-bg);
+            border-color: var(--accent-primary-hover);
+            color: var(--accent-primary-hover);
+        }
+        .btn-outline:disabled {
+            border-color: #cbd5e0; /* Gray-300 for disabled */
+            color: #a0aec0; /* Gray-400 for disabled text */
+            background-color: var(--bg-card);
+            cursor: not-allowed;
+        }
+        .calendar-day {
+            width: calc(100% / 7 - 4px);
+            aspect-ratio: 1 / 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: var(--text-secondary);
+        }
+        .calendar-day:hover {
+            background-color: var(--highlight-bg);
+        }
+        .calendar-day.has-task {
+            background-color: #fffadf; /* A very light, warm yellow */
+            color: #8c7000; /* Darker yellow/brown for text */
+            font-weight: bold;
+        }
+        .calendar-day.today {
+            border: 2px solid var(--accent-primary);
+            background-color: var(--highlight-bg);
+            color: var(--accent-primary);
+        }
+        .calendar-day.other-month {
+            color: #b0b0a7; /* Lighter gray for other month days */
+            background-color: var(--bg-main); /* Match body bg or slightly different */
+            cursor: default;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4); /* Slightly lighter backdrop */
+            animation: fadeIn 0.3s ease-out;
+        }
+        .modal-content {
+            background-color: var(--bg-card);
+            margin: 10% auto;
+            padding: 28px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            animation: slideInUp 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideInUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .close-button {
+            color: var(--text-secondary);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: var(--text-primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .icon-placeholder {
+            font-size: 3.5rem; /* Slightly smaller */
+            color: var(--icon-color-default); /* Muted icon color */
+            text-shadow: none; /* Remove text shadow for flatter look */
+        }
+        .swipe-indicator {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .task-list-item {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .task-list-item:last-child {
+            border-bottom: none;
+        }
+        .completed-mark {
+            color: var(--completed-mark);
+            font-weight: bold;
+        }
+        input[type="checkbox"] {
+            accent-color: var(--accent-primary);
+            border-radius: 4px;
+            border: 1.5px solid var(--border-color);
+        }
+        input[type="text"] {
+            background-color: #f7f7f5; /* Very light input background */
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        input[type="text"]:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(90, 141, 238, 0.2); /* Focus ring */
+        }
+        /* Specific header styling */
+        .app-header h1 {
+            color: var(--text-primary); /* Main title color */
+            font-weight: 700; /* Bolder title */
+        }
+        .app-header p {
+            color: var(--text-secondary); /* Subtitle color */
+        }
+        /* Card Headers */
+        .card h2 {
+            color: var(--text-primary);
+        }
+        /* Custom task button color */
+        #addCustomTaskBtn {
+            background-color: #6c757d; /* A neutral dark gray for custom add */
+            color: white;
+        }
+        #addCustomTaskBtn:hover {
+            background-color: #5a6268;
+        }
+        /* Today's task icon color */
+        #todayTaskIcon.fas.fa-star { /* Be specific for default star */
+             color: #f5c518; /* A warm yellow for star */
+        }
+        /* Suggestion icon color if it's a check circle */
+        #suggestionIcon.fas.fa-check-circle {
+            color: var(--completed-mark); /* Green for confirmation */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 md:p-8">
+    <header class="mb-8 text-center app-header">
+        <h1 class="text-4xl font-bold">
+            <i class="fas fa-rocket mr-2 text-yellow-500"></i>One push one happiness
+        </h1>
+        <p class="text-lg mt-2">毎日ひとつ、新しい発見と喜びを。</p>
+    </header>
+
+    <main class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
+        <section class="space-y-6">
+            <div class="card p-6 relative">
+                <h2 class="text-2xl font-semibold mb-4">今日の心躍る提案 <i class="fas fa-lightbulb text-yellow-400"></i></h2>
+                <div id="suggestionCard" class="suggestion-card p-6 rounded-lg min-h-[200px] flex flex-col items-center justify-center text-center relative">
+                    <div id="suggestionContent" class="flex flex-col items-center">
+                         <div id="suggestionIcon" class="icon-placeholder mb-4"></div>
+                         <p id="suggestionText" class="text-lg"></p>
+                    </div>
+                    <div class="swipe-indicator hidden md:block">
+                        <i class="fas fa-arrows-left-right mr-1"></i> スワイプ or ボタンで次へ
+                    </div>
+                </div>
+                <div class="flex justify-around mt-4">
+                    <button id="acceptBtn" class="btn btn-primary w-2/5"><i class="fas fa-check mr-2"></i>これにする！</button>
+                    <button id="nextBtn" class="btn btn-outline w-2/5"><i class="fas fa-arrow-right mr-2"></i>次を見る</button>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <h2 class="text-2xl font-semibold mb-4">今日の心躍ること <i class="fas fa-star text-yellow-400"></i></h2>
+                <div id="todayTaskContainer" class="p-4 rounded-lg border min-h-[100px]" style="border-color: var(--border-color); background-color: #f9f9f7;">
+                    <p id="todayTaskText" class="text-lg"></p>
+                    <div id="todayTaskIcon" class="icon-placeholder my-2 hidden"></div>
+                </div>
+                <div class="mt-4 flex items-center space-x-3">
+                    <input type="checkbox" id="taskCompletedCheckbox" class="h-5 w-5 rounded focus:ring-offset-0" style="border-color: var(--border-color);" disabled>
+                    <label for="taskCompletedCheckbox" class="">完了したらチェック！</label>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <h2 class="text-2xl font-semibold mb-4">自分で決める <i class="fas fa-pencil-alt text-green-500"></i></h2>
+                <div class="flex flex-col space-y-3">
+                    <input type="text" id="customTaskInput" placeholder="例：新しい道を散歩する" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-opacity-50" style="border-color: var(--border-color); background-color: #fdfcfb;">
+                    <button id="addCustomTaskBtn" class="btn"><i class="fas fa-plus mr-2"></i>これを今日やることにする</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card p-6">
+            <h2 class="text-2xl font-semibold mb-4">心躍るカレンダー <i class="fas fa-calendar-alt text-blue-400"></i></h2>
+            <div class="flex justify-between items-center mb-4">
+                <button id="prevMonthBtn" class="btn btn-outline !p-2"><i class="fas fa-chevron-left"></i></button>
+                <h3 id="calendarMonthYear" class="text-xl font-medium"></h3>
+                <button id="nextMonthBtn" class="btn btn-outline !p-2"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-7 gap-1">
+                </div>
+        </section>
+    </main>
+
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeModalBtn">&times;</span>
+            <h3 id="modalDate" class="text-xl font-semibold mb-3"></h3>
+            <div id="modalTaskList" class="space-y-2">
+                </div>
+        </div>
+    </div>
+
+    <footer class="mt-12 text-center text-sm">
+        <p>&copy; <span id="currentYear"></span> One push one happiness. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // --- Initial Data ---
+        const kokoroOdoruSuggestions = [
+            // Existing suggestions
+            { id: "s1", text: "新しいカフェを開拓する", icon: "fas fa-coffee", category: "外出" },
+            { id: "s2", text: "普段読まないジャンルの本を読む", icon: "fas fa-book-open", category: "学習" },
+            { id: "s3", text: "公園で30分間日光浴をする", icon: "fas fa-sun", category: "健康" },
+            { id: "s4", text: "誰かに感謝のメッセージを送る", icon: "fas fa-paper-plane", category: "人間関係" },
+            { id: "s5", text: "5分間瞑想する", icon: "fas fa-brain", category: "リラックス" },
+            { id: "s6", text: "新しいレシピに挑戦する", icon: "fas fa-utensils", category: "趣味" },
+            { id: "s7", text: "近所を散歩して新しいお店を見つける", icon: "fas fa-map-marked-alt", category: "運動" },
+            { id: "s8", text: "好きな音楽をかけて少し踊る", icon: "fas fa-music", category: "エンタメ" },
+            { id: "s9", text: "部屋の小さな模様替えをする", icon: "fas fa-couch", category: "生活" },
+            { id: "s10", text: "寝る前に今日あった良いことを3つ書き出す", icon: "fas fa-pencil-alt", category: "自己啓発" },
+            { id: "s11", text: "空の写真を撮る", icon: "fas fa-camera-retro", category: "趣味" },
+            { id: "s12", text: "植物に水をやり、観察する", icon: "fas fa-seedling", category: "癒し" },
+            { id: "s13", text: "15分早く起きて静かな時間を過ごす", icon: "fas fa-clock", category: "習慣" },
+            { id: "s14", text: "手書きで短い手紙やメモを書く", icon: "fas fa-pen-nib", category: "表現" },
+            { id: "s15", text: "行ったことのないスーパーマーケットに行く", icon: "fas fa-shopping-cart", category: "発見" },
+            // New 50 suggestions
+            { id: "s16", text: "蝉の抜け殻触ってみよう", icon: "fas fa-bug", category: "自然" },
+            { id: "s17", text: "利き手じゃない方でごはんを食べてみよう", icon: "fas fa-utensils", category: "挑戦" },
+            { id: "s18", text: "1分間空をみあげてみよう", icon: "fas fa-cloud", category: "リラックス" },
+            { id: "s19", text: "会社とか学校ある人はいつもより10分早くお家出てみよう お休みの人はお休みじゃないときよりも早く起きてみよう", icon: "fas fa-door-open", category: "習慣" },
+            { id: "s20", text: "はじめてのお店に入ってみよう", icon: "fas fa-store", category: "発見" },
+            { id: "s21", text: "朝ジョギングしてみよう P.S. ウォーキングでもいいよ", icon: "fas fa-running", category: "運動" },
+            { id: "s22", text: "朝ごはんにミューズリーたべよう（ミューズリーってなんだろう？）", icon: "fas fa-bowl-rice", category: "食事" }, // Changed to bowl-rice for muesli
+            { id: "s23", text: "誰かにお手紙を書いてみよう", icon: "fas fa-envelope-open-text", category: "人間関係" },
+            { id: "s24", text: "いつもとちがう道通って目的地行こう", icon: "fas fa-route", category: "発見" },
+            { id: "s25", text: "ふだん苦手であんまし食べないもの食べてみよう", icon: "fas fa-pepper-hot", category: "挑戦" },
+            { id: "s26", text: "シャンプーでアトムやってみよう", icon: "fas fa-bath", category: "遊び心" },
+            { id: "s27", text: "急に逆立ちしてみよう", icon: "fas fa-child", category: "挑戦" },
+            { id: "s28", text: "朝、スクランブルエッグをつくってみよう", icon: "fas fa-egg", category: "料理" },
+            { id: "s29", text: "利き手じゃない方の手で歯磨きしてみよう", icon: "fas fa-tooth", category: "挑戦" },
+            { id: "s30", text: "ご飯食べるとき、TVを消してみよう（いつも消してる人は、いつもより味に集中して食べてみよう）", icon: "fas fa-comment-slash", category: "習慣" },
+            { id: "s31", text: "ご飯食べるとき、一口30回以上噛んで食べてみよう", icon: "fas fa-grin-tongue", category: "健康" },
+            { id: "s32", text: "朝ごはん、いつもパンの人はお米に、いつもお米の人はパンにしてみよう", icon: "fas fa-exchange-alt", category: "食事" },
+            { id: "s33", text: "用もないのに誰かに電話かけてみよう", icon: "fas fa-phone-volume", category: "人間関係" },
+            { id: "s34", text: "街で見かけた人の人生について想像してみよう", icon: "fas fa-theater-masks", category: "想像力" },
+            { id: "s35", text: "靴下履かないで靴履いてみよう", icon: "fas fa-shoe-prints", category: "感覚" },
+            { id: "s36", text: "散歩中の犬を撫でさせてもらおう", icon: "fas fa-dog", category: "交流" },
+            { id: "s37", text: "ものを買った後にありがとうって言ってみよう", icon: "fas fa-handshake", category: "感謝" },
+            { id: "s38", text: "トイレをピカピカにしてみよう", icon: "fas fa-toilet", category: "生活" },
+            { id: "s39", text: "朝1時間だけはやく起きてみよう", icon: "fas fa-hourglass-start", category: "習慣" },
+            { id: "s40", text: "後ろ向きに歩いてみよう", icon: "fas fa-people-arrows", category: "挑戦" },
+            { id: "s41", text: "電車乗るとき切符買ってみよう（いつも切符の人はSuicaゲット）", icon: "fas fa-ticket-alt", category: "体験" },
+            { id: "s42", text: "洋服を丁寧に畳んでみよう", icon: "fas fa-tshirt", category: "生活" },
+            { id: "s43", text: "ご飯食べるときTV消してみよう", icon: "fas fa-plug", category: "習慣" }, // Slightly different from s30
+            { id: "s44", text: "食後に果物食べてみよう", icon: "fas fa-apple-alt", category: "食事" },
+            { id: "s45", text: "140文字で物語をつくってみよう", icon: "fas fa-feather-alt", category: "創造性" },
+            { id: "s46", text: "断られても良いから電車で席を譲ってみよう", icon: "fas fa-chair", category: "親切" },
+            { id: "s47", text: "自然の多いところに行ってみよう", icon: "fas fa-tree", category: "癒し" },
+            { id: "s48", text: "雨ん中傘をささずに歩いてみよう", icon: "fas fa-cloud-showers-heavy", category: "挑戦" },
+            { id: "s49", text: "初めて入る映画館で映画を観てみよう", icon: "fas fa-film", category: "エンタメ" },
+            { id: "s50", text: "暑いけどちょっとセーターを着てみよう", icon: "fas fa-user-tie", category: "挑戦" }, // Using user-tie as a generic "dressed unusually"
+            { id: "s51", text: "通勤中（通学中）に街路樹の数をかぞえてみよう", icon: "fas fa-hashtag", category: "観察" },
+            { id: "s52", text: "朝起きた直後にお気に入りの音楽を流してみよう", icon: "fas fa-play-circle", category: "気分転換" },
+            { id: "s53", text: "外に出て、木の葉に触れてみよう", icon: "fas fa-leaf", category: "自然" },
+            { id: "s54", text: "3分間きっちり歯を磨いてみよう", icon: "fas fa-stopwatch", category: "健康" },
+            { id: "s55", text: "街の中で色々な匂いに意識を向けてみよう", icon: "fas fa-wind", category: "感覚" },
+            { id: "s56", text: "ふだん聴かない種類の音楽を聴いてみよう（ロック好きの人はクラッシックとかね）", icon: "fas fa-headphones-alt", category: "発見" },
+            { id: "s57", text: "お花を一輪へやにかざってみよう", icon: "fas fa-spa", category: "癒し" },
+            { id: "s58", text: "まえの日見た夢をノートに書きとめよう", icon: "fas fa-moon", category: "自己理解" },
+            { id: "s59", text: "朝10分瞑想してみよう", icon: "fas fa-peace", category: "リラックス" },
+            { id: "s60", text: "湯船に温泉の素入れてみよう", icon: "fas fa-hot-tub", category: "リラックス" },
+            { id: "s61", text: "ハリウッド映画みたいにお風呂を泡泡にしてみよう", icon: "fas fa-soap", category: "遊び心" },
+            { id: "s62", text: "空の色に名前をつけてみよう（皐月晴れブルーとか羊グレーとかね）", icon: "fas fa-palette", category: "創造性" },
+            { id: "s63", text: "ごはんの時にきちんと“いただきます”って言ってみよう", icon: "fas fa-hands-praying", category: "感謝" }, // Changed to praying hands
+            { id: "s64", text: "ノンカフェインのコーヒー夜に飲んでみよう", icon: "fas fa-mug-hot", category: "体験" },
+            { id: "s65", text: "ドングリを3個ひろってみよう", icon: "fas fa-fan", category: "自然" } // Using fan as a placeholder for acorn shape
+        ];
+
+        // --- State Variables ---
+        let currentSuggestion = null;
+        let todayTask = null; // { text: string, icon: string | null, completed: boolean, dateAdded: string (YYYY-MM-DD) }
+        let completedTasks = []; // [{ date: string (YYYY-MM-DD), taskText: string, icon: string | null }]
+        let calendarDate = new Date();
+
+        // --- DOM Elements ---
+        const suggestionCard = document.getElementById('suggestionCard');
+        const suggestionIconEl = document.getElementById('suggestionIcon');
+        const suggestionTextEl = document.getElementById('suggestionText');
+        const acceptBtn = document.getElementById('acceptBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        const todayTaskContainer = document.getElementById('todayTaskContainer');
+        const todayTaskTextEl = document.getElementById('todayTaskText');
+        const todayTaskIconEl = document.getElementById('todayTaskIcon');
+        const taskCompletedCheckbox = document.getElementById('taskCompletedCheckbox');
+
+        const customTaskInput = document.getElementById('customTaskInput');
+        const addCustomTaskBtn = document.getElementById('addCustomTaskBtn');
+
+        const calendarGrid = document.getElementById('calendarGrid');
+        const calendarMonthYearEl = document.getElementById('calendarMonthYear');
+        const prevMonthBtn = document.getElementById('prevMonthBtn');
+        const nextMonthBtn = document.getElementById('nextMonthBtn');
+
+        const taskModal = document.getElementById('taskModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const modalDateEl = document.getElementById('modalDate');
+        const modalTaskListEl = document.getElementById('modalTaskList');
+        
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // --- Functions ---
+
+        // Load data from localStorage
+        function loadData() {
+            const storedTodayTask = localStorage.getItem('kokoroOdoruTodayTask');
+            const storedCompletedTasks = localStorage.getItem('kokoroOdoruCompletedTasks');
+            const todayString = getTodayString();
+
+            if (storedTodayTask) {
+                const parsedTask = JSON.parse(storedTodayTask);
+                if (parsedTask.dateAdded === todayString) {
+                    todayTask = parsedTask;
+                } else {
+                    localStorage.removeItem('kokoroOdoruTodayTask');
+                }
+            }
+            if (storedCompletedTasks) {
+                completedTasks = JSON.parse(storedCompletedTasks);
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            if (todayTask) {
+                localStorage.setItem('kokoroOdoruTodayTask', JSON.stringify(todayTask));
+            } else {
+                localStorage.removeItem('kokoroOdoruTodayTask');
+            }
+            localStorage.setItem('kokoroOdoruCompletedTasks', JSON.stringify(completedTasks));
+        }
+
+        // Get today's date as YYYY-MM-DD string
+        function getTodayString() {
+            const today = new Date();
+            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        }
+
+        // Display a random suggestion
+        function showRandomSuggestion() {
+            let randomIndex;
+            // Ensure different suggestion from current one if possible
+            if (kokoroOdoruSuggestions.length > 1) {
+                do {
+                    randomIndex = Math.floor(Math.random() * kokoroOdoruSuggestions.length);
+                } while (currentSuggestion && kokoroOdoruSuggestions[randomIndex].id === currentSuggestion.id);
+            } else if (kokoroOdoruSuggestions.length === 1) {
+                randomIndex = 0; // Only one suggestion available
+            } else {
+                // Handle case with no suggestions
+                suggestionTextEl.textContent = "提案がありません。";
+                suggestionIconEl.className = "icon-placeholder fas fa-meh"; // Placeholder icon
+                currentSuggestion = null;
+                return;
+            }
+            
+            currentSuggestion = kokoroOdoruSuggestions[randomIndex];
+            suggestionIconEl.className = `icon-placeholder ${currentSuggestion.icon}`;
+            suggestionIconEl.style.color = ''; 
+            suggestionTextEl.textContent = currentSuggestion.text;
+            suggestionCard.style.transform = ''; 
+        }
+
+        // Update the "Today's Task" display
+        function updateTodayTaskDisplay() {
+            if (todayTask) {
+                todayTaskTextEl.textContent = todayTask.text;
+                if (todayTask.icon) {
+                    todayTaskIconEl.className = `icon-placeholder ${todayTask.icon}`;
+                    todayTaskIconEl.classList.remove('hidden');
+                    if (todayTask.icon === 'fas fa-star') {
+                        todayTaskIconEl.style.color = 'var(--accent-primary)'; 
+                    } else {
+                        todayTaskIconEl.style.color = ''; 
+                    }
+                } else { 
+                    todayTaskIconEl.className = 'icon-placeholder fas fa-star'; 
+                    todayTaskIconEl.style.color = 'var(--accent-primary)';
+                    todayTaskIconEl.classList.remove('hidden');
+                }
+                taskCompletedCheckbox.disabled = false;
+                taskCompletedCheckbox.checked = todayTask.completed;
+
+                acceptBtn.disabled = true;
+                nextBtn.disabled = true;
+                customTaskInput.disabled = true;
+                addCustomTaskBtn.disabled = true;
+                
+                suggestionTextEl.textContent = "今日の心躍ることは設定済みです！";
+                suggestionIconEl.className = "icon-placeholder fas fa-check-circle";
+                suggestionIconEl.style.color = 'var(--completed-mark)';
+
+            } else {
+                todayTaskTextEl.textContent = "まだ設定されていません。";
+                todayTaskIconEl.classList.add('hidden');
+                todayTaskIconEl.style.color = ''; 
+                taskCompletedCheckbox.disabled = true;
+                taskCompletedCheckbox.checked = false;
+
+                acceptBtn.disabled = false;
+                nextBtn.disabled = false;
+                customTaskInput.disabled = false;
+                addCustomTaskBtn.disabled = false;
+                if (kokoroOdoruSuggestions.length > 0) { 
+                    showRandomSuggestion(); 
+                } else {
+                    suggestionTextEl.textContent = "提案がありません。";
+                    suggestionIconEl.className = "icon-placeholder fas fa-meh";
+                }
+            }
+            saveData();
+            renderCalendar();
+        }
+
+        // Set a task as "Today's Task"
+        function setTodayTask(text, icon = null) {
+            if (todayTask && todayTask.dateAdded === getTodayString()) {
+                console.warn("今日の「心躍ること」は既に設定されています。");
+                return;
+            }
+            todayTask = {
+                text: text,
+                icon: icon || 'fas fa-star', 
+                completed: false,
+                dateAdded: getTodayString()
+            };
+            updateTodayTaskDisplay();
+        }
+
+        // Handle "Accept" button click
+        acceptBtn.addEventListener('click', () => {
+            if (currentSuggestion && !acceptBtn.disabled) {
+                setTodayTask(currentSuggestion.text, currentSuggestion.icon);
+            }
+        });
+
+        // Handle "Next" button click
+        nextBtn.addEventListener('click', () => {
+            if (!nextBtn.disabled && kokoroOdoruSuggestions.length > 0) { 
+                 showRandomSuggestion();
+            }
+        });
+
+        // Handle "Add Custom Task" button click
+        addCustomTaskBtn.addEventListener('click', () => {
+            if (addCustomTaskBtn.disabled) return;
+            const customText = customTaskInput.value.trim();
+            if (customText) {
+                setTodayTask(customText); 
+                customTaskInput.value = '';
+            } else {
+                // Consider a more user-friendly notification instead of console.warn
+                console.warn("タスク内容を入力してください。");
+            }
+        });
+
+        // Handle "Task Completed" checkbox change
+        taskCompletedCheckbox.addEventListener('change', () => {
+            if (todayTask) {
+                todayTask.completed = taskCompletedCheckbox.checked;
+                const todayString = getTodayString();
+                if (todayTask.completed) {
+                    const existingEntryIndex = completedTasks.findIndex(
+                        entry => entry.date === todayString && entry.taskText === todayTask.text
+                    );
+                    if (existingEntryIndex === -1) {
+                        completedTasks.push({
+                            date: todayString,
+                            taskText: todayTask.text,
+                            icon: todayTask.icon
+                        });
+                    }
+                } else {
+                    completedTasks = completedTasks.filter(
+                        entry => !(entry.date === todayString && entry.taskText === todayTask.text)
+                    );
+                }
+                updateTodayTaskDisplay(); 
+            }
+        });
+
+        // --- Calendar Functions ---
+        function renderCalendar() {
+            calendarGrid.innerHTML = ''; 
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth(); 
+
+            calendarMonthYearEl.textContent = `${year}年 ${month + 1}月`;
+
+            const firstDayOfMonth = new Date(year, month, 1);
+            const lastDayOfMonth = new Date(year, month + 1, 0);
+            const daysInMonth = lastDayOfMonth.getDate();
+            let dayOfWeekOfFirst = firstDayOfMonth.getDay(); 
+            dayOfWeekOfFirst = (dayOfWeekOfFirst === 0) ? 6 : dayOfWeekOfFirst - 1; 
+            
+            const today = new Date();
+            const todayDateString = getTodayString();
+
+            const dayNames = ['月', '火', '水', '木', '金', '土', '日']; 
+            dayNames.forEach(name => {
+                const dayNameCell = document.createElement('div');
+                dayNameCell.className = 'text-center font-medium text-sm py-1';
+                dayNameCell.style.color = 'var(--text-secondary)';
+                dayNameCell.textContent = name;
+                calendarGrid.appendChild(dayNameCell);
+            });
+
+            for (let i = 0; i < dayOfWeekOfFirst; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day other-month';
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.textContent = day;
+                dayCell.className = 'calendar-day';
+                
+                const currentDateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                if (currentDateString === todayDateString) {
+                    dayCell.classList.add('today');
+                }
+
+                const tasksOnThisDay = completedTasks.filter(task => task.date === currentDateString);
+                if (tasksOnThisDay.length > 0) {
+                    dayCell.classList.add('has-task');
+                    dayCell.innerHTML = `${day}<span class="completed-mark text-lg ml-1">◎</span>`;
+                    dayCell.addEventListener('click', () => showTasksForDay(currentDateString, tasksOnThisDay));
+                } else {
+                     dayCell.addEventListener('click', () => showTasksForDay(currentDateString, []));
+                }
+                calendarGrid.appendChild(dayCell);
+            }
+            const totalCells = dayOfWeekOfFirst + daysInMonth;
+            const remainingCells = (7 - (totalCells % 7)) % 7;
+             for (let i = 0; i < remainingCells; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day other-month';
+                calendarGrid.appendChild(emptyCell);
+            }
+        }
+
+        prevMonthBtn.addEventListener('click', () => {
+            calendarDate.setMonth(calendarDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            calendarDate.setMonth(calendarDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        // --- Modal Functions ---
+        function showTasksForDay(dateString, tasks) {
+            const [year, month, day] = dateString.split('-');
+            modalDateEl.textContent = `${year}年${parseInt(month)}月${parseInt(day)}日の心躍ったこと`;
+            modalDateEl.style.color = 'var(--text-primary)';
+            modalTaskListEl.innerHTML = ''; 
+
+            if (tasks.length > 0) {
+                tasks.forEach(task => {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'task-list-item flex items-center';
+                    
+                    let iconHtml = '';
+                    let iconColor = task.icon === 'fas fa-star' ? 'var(--accent-primary)' : 'var(--icon-color-default)';
+                    if (task.icon) {
+                        iconHtml = `<i class="${task.icon} mr-3 text-xl" style="color: ${iconColor};"></i>`;
+                    } else { 
+                        iconHtml = `<i class="fas fa-star mr-3 text-xl" style="color: var(--accent-primary);"></i>`;
+                    }
+                    
+                    listItem.innerHTML = `${iconHtml} <span class="">${task.taskText}</span>`;
+                    modalTaskListEl.appendChild(listItem);
+                });
+            } else {
+                modalTaskListEl.innerHTML = `<p style="color: var(--text-secondary);">この日に完了した「心躍ること」はありません。</p>`;
+            }
+            taskModal.style.display = 'flex';
+        }
+
+        closeModalBtn.addEventListener('click', () => {
+            taskModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === taskModal) {
+                taskModal.style.display = 'none';
+            }
+        });
+
+        // --- Swipe Functionality for Suggestion Card ---
+        let touchstartX = 0;
+        let touchendX = 0;
+        let isDragging = false; // For mouse
+        const swipeThreshold = 50; 
+
+        function commonSwipeStart(screenX) {
+            if (acceptBtn.disabled) return false; 
+            touchstartX = screenX;
+            suggestionCard.classList.add('dragging');
+            return true;
+        }
+
+        function commonSwipeEnd(screenX) {
+            if (acceptBtn.disabled) { 
+                 suggestionCard.classList.remove('dragging');
+                 suggestionCard.style.transform = '';
+                 return;
+            }
+            touchendX = screenX;
+            handleSwipe();
+            suggestionCard.classList.remove('dragging');
+        }
+        
+        suggestionCard.addEventListener('touchstart', function(event) {
+            if(commonSwipeStart(event.changedTouches[0].screenX)) {
+                // event.preventDefault(); // Consider if vertical scroll is an issue
+            }
+        }, { passive: false }); 
+
+        suggestionCard.addEventListener('touchmove', function(event) {
+            // if (isDragging || suggestionCard.classList.contains('dragging')) {
+            //    event.preventDefault(); 
+            // }
+        }, { passive: false });
+
+
+        suggestionCard.addEventListener('touchend', function(event) {
+            commonSwipeEnd(event.changedTouches[0].screenX);
+        }, { passive: true });
+
+        suggestionCard.addEventListener('mousedown', function(event) {
+            if (event.button !== 0) return; 
+            if(commonSwipeStart(event.screenX)) {
+                isDragging = true; 
+            }
+        });
+
+        suggestionCard.addEventListener('mousemove', function(event) {
+            if (!isDragging) return;
+            // Visual feedback during move
+        });
+
+        suggestionCard.addEventListener('mouseup', function(event) {
+            if (!isDragging) return;
+            isDragging = false;
+            commonSwipeEnd(event.screenX);
+        });
+        suggestionCard.addEventListener('mouseleave', function(event) { 
+            if (!isDragging) return;
+            isDragging = false;
+            suggestionCard.classList.remove('dragging');
+            suggestionCard.style.transform = ''; 
+            touchstartX = 0; 
+        });
+
+
+        function handleSwipe() {
+            const deltaX = touchendX - touchstartX;
+            if (Math.abs(deltaX) < swipeThreshold) {
+                suggestionCard.style.transform = ''; 
+                return;
+            }
+
+            if (todayTask && todayTask.dateAdded === getTodayString()) {
+                suggestionCard.style.transform = '';
+                return;
+            }
+            
+            const direction = deltaX < 0 ? -1 : 1; 
+
+            suggestionCard.style.transition = 'transform 0.3s ease-out';
+            suggestionCard.style.transform = `translateX(${direction * 100}%) rotate(${direction * 5}deg)`;
+            
+            setTimeout(() => {
+                if (kokoroOdoruSuggestions.length > 0) showRandomSuggestion();
+                suggestionCard.style.transition = 'none'; 
+                suggestionCard.style.transform = `translateX(${-direction * 100}%) rotate(${-direction * 5}deg)`;
+                
+                suggestionCard.offsetHeight; // Force reflow
+
+                suggestionCard.style.transition = 'transform 0.3s ease-out';
+                suggestionCard.style.transform = 'translateX(0) rotate(0)';
+            }, 300);
+            
+            touchstartX = 0;
+            touchendX = 0;
+        }
+
+
+        // --- Initialization ---
+        loadData(); 
+        updateTodayTaskDisplay(); 
+        renderCalendar();
+    </script>
+</body>
+</html>
