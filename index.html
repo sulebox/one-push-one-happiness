@@ -244,7 +244,7 @@
             color: var(--completed-mark); 
         }
         #suggestionText {
-            max-height: 8rem; /* Increased max-height for suggestion text */
+            max-height: 8rem; 
             overflow-y: auto;
             width: 100%; 
             scrollbar-width: thin; 
@@ -444,40 +444,48 @@
         function loadData() {
             const storedTodayTask = localStorage.getItem('kokoroOdoruTodayTask');
             const storedCompletedTasks = localStorage.getItem('kokoroOdoruCompletedTasks');
-            const storedHistory = localStorage.getItem('kokoroOdoruSuggestionHistory');
-            const storedHistoryIndex = localStorage.getItem('kokoroOdoruHistoryIndex');
-            const storedHistoryDate = localStorage.getItem('kokoroOdoruHistoryDate');
+            let storedHistory = localStorage.getItem('kokoroOdoruSuggestionHistory');
+            let storedHistoryIndex = localStorage.getItem('kokoroOdoruHistoryIndex');
+            let storedHistoryDate = localStorage.getItem('kokoroOdoruHistoryDate');
             const todayString = getTodayString();
 
             if (storedTodayTask) {
                 const parsedTask = JSON.parse(storedTodayTask);
                 if (parsedTask.dateAdded === todayString) {
                     todayTask = parsedTask;
-                } else { // Task is from a previous day, clear it and its related history
+                } else { 
                     localStorage.removeItem('kokoroOdoruTodayTask');
+                    // Clear all history if task is old, as history is tied to the suggestion flow of a day
                     localStorage.removeItem('kokoroOdoruSuggestionHistory');
                     localStorage.removeItem('kokoroOdoruHistoryIndex');
                     localStorage.removeItem('kokoroOdoruHistoryDate');
                     suggestionHistory = [];
                     historyIndex = -1;
+                    storedHistory = null; // Nullify to prevent loading old history below
+                    storedHistoryIndex = null;
+                    storedHistoryDate = null;
                 }
             }
             
-            // If no task is set for today, or if the task was cleared because it was old,
-            // then check if the stored history is from today.
-            if (!todayTask) {
+            if (!todayTask) { // Only load/process history if no task is active for today
                 if (storedHistoryDate === todayString && storedHistory) {
-                    suggestionHistory = JSON.parse(storedHistory);
+                    try {
+                        suggestionHistory = JSON.parse(storedHistory);
+                        if (!Array.isArray(suggestionHistory)) suggestionHistory = []; // Ensure it's an array
+                    } catch (e) {
+                        console.error("Error parsing stored history:", e);
+                        suggestionHistory = [];
+                    }
+
                     if (storedHistoryIndex !== null) {
                         historyIndex = parseInt(storedHistoryIndex, 10);
-                         // Validate historyIndex
-                        if (historyIndex < 0 || historyIndex >= suggestionHistory.length) {
+                        if (isNaN(historyIndex) || historyIndex < 0 || historyIndex >= suggestionHistory.length) {
                             historyIndex = suggestionHistory.length > 0 ? suggestionHistory.length - 1 : -1;
                         }
                     } else {
                          historyIndex = suggestionHistory.length > 0 ? suggestionHistory.length - 1 : -1;
                     }
-                } else { // History is not from today or doesn't exist, clear it
+                } else { 
                     localStorage.removeItem('kokoroOdoruSuggestionHistory');
                     localStorage.removeItem('kokoroOdoruHistoryIndex');
                     localStorage.removeItem('kokoroOdoruHistoryDate');
@@ -486,9 +494,14 @@
                 }
             }
 
-
             if (storedCompletedTasks) {
-                completedTasks = JSON.parse(storedCompletedTasks);
+                try {
+                    completedTasks = JSON.parse(storedCompletedTasks);
+                    if (!Array.isArray(completedTasks)) completedTasks = [];
+                } catch (e) {
+                    console.error("Error parsing completed tasks:", e);
+                    completedTasks = [];
+                }
             }
         }
 
@@ -500,7 +513,6 @@
             }
             localStorage.setItem('kokoroOdoruCompletedTasks', JSON.stringify(completedTasks));
             
-            // Always save current history state for today
             localStorage.setItem('kokoroOdoruSuggestionHistory', JSON.stringify(suggestionHistory));
             localStorage.setItem('kokoroOdoruHistoryIndex', historyIndex.toString());
             localStorage.setItem('kokoroOdoruHistoryDate', getTodayString());
@@ -512,7 +524,7 @@
         }
 
         function displaySuggestion(suggestionToDisplay) {
-            currentSuggestion = suggestionToDisplay; // Update global currentSuggestion
+            currentSuggestion = suggestionToDisplay; 
             if (suggestionToDisplay) {
                 suggestionIconEl.className = `icon-placeholder ${suggestionToDisplay.icon}`;
                 suggestionIconEl.style.color = ''; 
@@ -522,6 +534,7 @@
                 suggestionIconEl.className = "icon-placeholder fas fa-meh";
             }
             suggestionCardContainer.style.transform = ''; 
+            // console.log("Displayed:", currentSuggestion ? currentSuggestion.text : "None", "History Index:", historyIndex, "History Length:", suggestionHistory.length);
         }
         
         function generateAndShowNewSuggestion() {
@@ -532,27 +545,31 @@
 
             let newSuggestion;
             let attempts = 0;
-            const maxAttempts = kokoroOdoruSuggestions.length * 3; 
+            const maxAttempts = kokoroOdoruSuggestions.length * 2 + 5; // Increased attempts slightly
 
-            if (kokoroOdoruSuggestions.length === 1) {
-                newSuggestion = kokoroOdoruSuggestions[0];
+            const avoidSuggestionId = currentSuggestion ? currentSuggestion.id : null;
+
+            if (kokoroOdoruSuggestions.length <= 1) { 
+                newSuggestion = kokoroOdoruSuggestions.length > 0 ? kokoroOdoruSuggestions[0] : null;
             } else {
                 let randomIndex;
-                // Try to pick a suggestion different from the current one.
-                // currentSuggestion should be up-to-date from displaySuggestion.
-                const previousSuggestionId = currentSuggestion ? currentSuggestion.id : null; 
-                
                 do {
                     randomIndex = Math.floor(Math.random() * kokoroOdoruSuggestions.length);
                     newSuggestion = kokoroOdoruSuggestions[randomIndex];
                     attempts++;
                 } while (
-                    newSuggestion.id === previousSuggestionId &&
+                    newSuggestion.id === avoidSuggestionId && 
                     attempts < maxAttempts
                 );
 
-                if (newSuggestion.id === previousSuggestionId && attempts >= maxAttempts) {
-                    console.warn("Could not find a different suggestion from the current one after max attempts. A random one will be shown.");
+                if (newSuggestion.id === avoidSuggestionId && attempts >= maxAttempts) {
+                    console.warn("Could not find a different suggestion from the current one after max attempts. Picking next sequentially.");
+                    let currentIdxInMasterList = kokoroOdoruSuggestions.findIndex(s => s.id === avoidSuggestionId);
+                    if (currentIdxInMasterList !== -1) { 
+                        newSuggestion = kokoroOdoruSuggestions[(currentIdxInMasterList + 1) % kokoroOdoruSuggestions.length];
+                    } else { // Fallback if current not in master, pick first one not matching current
+                        newSuggestion = kokoroOdoruSuggestions.find(s => s.id !== avoidSuggestionId) || kokoroOdoruSuggestions[0];
+                    }
                 }
             }
 
@@ -562,7 +579,7 @@
             
             suggestionHistory.push(newSuggestion);
             historyIndex = suggestionHistory.length - 1;
-            displaySuggestion(newSuggestion); // This updates currentSuggestion
+            displaySuggestion(newSuggestion); 
             saveData(); 
         }
 
@@ -571,7 +588,7 @@
                 historyIndex++;
                 displaySuggestion(suggestionHistory[historyIndex]);
             } else {
-                generateAndShowNewSuggestion(); // This will display and update currentSuggestion
+                generateAndShowNewSuggestion(); 
             }
             saveData(); 
         }
@@ -619,7 +636,7 @@
                 customTaskInput.disabled = true;
                 addCustomTaskBtn.disabled = true;
                 
-                suggestionTextEl.textContent = "今日の心躍ることは設定済みです！"; // This will be the text in the suggestion card
+                suggestionTextEl.textContent = "今日の心躍ることは設定済みです！"; 
                 suggestionIconEl.className = "icon-placeholder fas fa-check-circle";
                 suggestionIconEl.style.color = 'var(--completed-mark)';
 
@@ -633,20 +650,17 @@
                 acceptBtn.innerHTML = '<i class="fas fa-check mr-2"></i>これにする！';
                 acceptBtn.classList.remove('btn-cancel');
                 acceptBtn.classList.add('btn-primary');
-                acceptBtn.disabled = false; 
+                acceptBtn.disabled = !currentSuggestion; // Disable if no current suggestion
 
                 nextBtn.disabled = false;
                 customTaskInput.disabled = false;
                 addCustomTaskBtn.disabled = false;
                 
-                // When no task is set, display the current suggestion from history or generate a new one.
-                // currentSuggestion should be set by displaySuggestion called from init or previous actions.
-                if (currentSuggestion) {
-                    displaySuggestion(currentSuggestion); // Re-display to ensure consistency
+                if (currentSuggestion) { // If there's a current suggestion (from history or newly generated)
+                    displaySuggestion(currentSuggestion);
                 } else if (suggestionHistory.length > 0 && historyIndex >=0 && historyIndex < suggestionHistory.length) {
                     displaySuggestion(suggestionHistory[historyIndex]);
-                }
-                 else if (kokoroOdoruSuggestions.length > 0) { // Fallback if currentSuggestion is somehow null
+                } else if (kokoroOdoruSuggestions.length > 0) { 
                     generateAndShowNewSuggestion();
                 } else {
                      displaySuggestion(null); 
@@ -673,8 +687,6 @@
                     return; 
                 }
                 todayTask = null; 
-                // After clearing task, we need to show a suggestion.
-                // Preferably the one that was current before task was set, or a new one.
                 if (suggestionHistory.length > 0 && historyIndex >= 0 && historyIndex < suggestionHistory.length) {
                     displaySuggestion(suggestionHistory[historyIndex]);
                 } else if (kokoroOdoruSuggestions.length > 0) {
@@ -918,15 +930,16 @@
             suggestionCardContainer.style.transform = `translateX(${direction * 100}%) rotate(${direction * 5}deg)`;
             
             setTimeout(() => {
-                if (direction === 1) { 
+                if (direction === 1) { // Right swipe
                     showNextSuggestion(); 
-                } else { 
+                } else { // Left swipe
                     showPreviousSuggestion();
                 }
+                // Animate in from opposite side
                 suggestionCardContainer.style.transition = 'none'; 
                 suggestionCardContainer.style.transform = `translateX(${-direction * 100}%) rotate(${-direction * 5}deg)`;
                 
-                suggestionCardContainer.offsetHeight; 
+                suggestionCardContainer.offsetHeight; // Force reflow to apply the transform before transition
 
                 suggestionCardContainer.style.transition = 'transform 0.3s ease-out';
                 suggestionCardContainer.style.transform = 'translateX(0) rotate(0)';
@@ -937,18 +950,21 @@
         }
 
         // --- Initialization ---
-        loadData();
+        loadData(); // Load data first
+        
+        // Initial display logic
         if (todayTask) { 
-            updateTodayTaskDisplay(); // Display task and disable suggestion UI
-        } else if (suggestionHistory.length > 0 && historyIndex >= 0 && historyIndex < suggestionHistory.length) {
-            displaySuggestion(suggestionHistory[historyIndex]);
-            updateTodayTaskDisplay(); // Update button states etc. based on no task
-        } else if (kokoroOdoruSuggestions.length > 0) {
-            generateAndShowNewSuggestion(); // This will call displaySuggestion
-            updateTodayTaskDisplay(); // Update button states etc. based on no task
+            updateTodayTaskDisplay(); 
         } else {
-            displaySuggestion(null);
-            updateTodayTaskDisplay(); // Update button states etc. based on no task
+            // If no task, try to display from history, or generate new if history is empty/invalid
+            if (suggestionHistory.length > 0 && historyIndex >= 0 && historyIndex < suggestionHistory.length) {
+                displaySuggestion(suggestionHistory[historyIndex]);
+            } else if (kokoroOdoruSuggestions.length > 0) {
+                generateAndShowNewSuggestion(); // This will set currentSuggestion via displaySuggestion
+            } else {
+                displaySuggestion(null); // No suggestions available
+            }
+            updateTodayTaskDisplay(); // Update UI based on whether a suggestion is now current
         }
         renderCalendar();
     </script>
