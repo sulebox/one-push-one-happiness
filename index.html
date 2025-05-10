@@ -22,6 +22,12 @@
             --highlight-bg: #e8e5dd; /* Highlight for hover, today in calendar */
             --completed-mark: #50c878; /* A gentle green for completed mark */
             --icon-color-default: #7b92a8; /* Muted icon color */
+            
+            /* Light blue for cancel button */
+            --cancel-button-bg-light-blue: #8cb4f5; /* Lighter blue */
+            --cancel-button-hover-bg-light-blue: #79a3e8; /* Slightly darker light blue for hover */
+            --cancel-button-disabled-bg-light-blue: #adcaf7; /* Even lighter blue for disabled */
+            --cancel-button-disabled-text-light-blue: #607db7; /* Text color for disabled light blue button */
         }
 
         body {
@@ -31,7 +37,7 @@
         }
         .card {
             background-color: var(--bg-card);
-            border-radius: 16px; /* Slightly more rounded */
+            border-radius: 16px; 
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05), 0 3px 6px rgba(0, 0, 0, 0.04);
             transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
             overflow: hidden;
@@ -53,9 +59,9 @@
             transform: scale(1.02);
         }
         .btn {
-            border-radius: 20px; /* Pill-shaped buttons */
+            border-radius: 20px; 
             padding: 10px 24px;
-            font-weight: 600; /* Slightly bolder */
+            font-weight: 600; 
             transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
             border: none; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -73,6 +79,18 @@
         }
         .btn-primary:disabled {
             background-color: #a0aec0; 
+            cursor: not-allowed;
+        }
+        .btn-cancel { /* Using light blue for cancel button */
+            background-color: var(--cancel-button-bg-light-blue);
+            color: white;
+        }
+        .btn-cancel:hover {
+            background-color: var(--cancel-button-hover-bg-light-blue);
+        }
+        .btn-cancel:disabled {
+            background-color: var(--cancel-button-disabled-bg-light-blue); 
+            color: var(--cancel-button-disabled-text-light-blue);
             cursor: not-allowed;
         }
         .btn-outline {
@@ -239,7 +257,8 @@
     <main class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
         <section class="space-y-6">
             <div class="card p-6 relative">
-                <h2 class="text-2xl font-semibold mb-4">今日のチョイス <i class="fas fa-lightbulb text-yellow-400"></i></h2> <div id="suggestionCard" class="suggestion-card p-6 rounded-lg min-h-[200px] flex flex-col items-center justify-center text-center relative">
+                <h2 class="text-2xl font-semibold mb-4">今日のチョイス <i class="fas fa-lightbulb text-yellow-400"></i></h2>
+                <div id="suggestionCard" class="suggestion-card p-6 rounded-lg min-h-[200px] flex flex-col items-center justify-center text-center relative">
                     <div id="suggestionContent" class="flex flex-col items-center">
                          <div id="suggestionIcon" class="icon-placeholder mb-4"></div>
                          <p id="suggestionText" class="text-lg"></p>
@@ -534,7 +553,13 @@
                 taskCompletedCheckbox.disabled = false;
                 taskCompletedCheckbox.checked = todayTask.completed;
 
-                acceptBtn.disabled = true;
+                // Accept button becomes cancel button
+                acceptBtn.innerHTML = '<i class="fas fa-times mr-2"></i>やっぱりやめる';
+                acceptBtn.classList.remove('btn-primary');
+                acceptBtn.classList.add('btn-cancel'); 
+                acceptBtn.disabled = todayTask.completed; 
+
+                // Disable other interactions
                 nextBtn.disabled = true;
                 customTaskInput.disabled = true;
                 addCustomTaskBtn.disabled = true;
@@ -543,14 +568,20 @@
                 suggestionIconEl.className = "icon-placeholder fas fa-check-circle";
                 suggestionIconEl.style.color = 'var(--completed-mark)';
 
-            } else {
+            } else { // No task set
                 todayTaskTextEl.textContent = "まだ設定されていません。";
                 todayTaskIconEl.classList.add('hidden');
                 todayTaskIconEl.style.color = ''; 
                 taskCompletedCheckbox.disabled = true;
                 taskCompletedCheckbox.checked = false;
 
-                acceptBtn.disabled = false;
+                // Accept button is for accepting a suggestion
+                acceptBtn.innerHTML = '<i class="fas fa-check mr-2"></i>これにする！';
+                acceptBtn.classList.remove('btn-cancel');
+                acceptBtn.classList.add('btn-primary');
+                acceptBtn.disabled = false; 
+
+                // Enable other interactions
                 nextBtn.disabled = false;
                 customTaskInput.disabled = false;
                 addCustomTaskBtn.disabled = false;
@@ -568,10 +599,6 @@
         }
 
         function setTodayTask(text, icon = null) {
-            if (todayTask && todayTask.dateAdded === getTodayString()) {
-                console.warn("今日の「心躍ること」は既に設定されています。");
-                return;
-            }
             todayTask = {
                 text: text,
                 icon: icon || 'fas fa-star', 
@@ -582,7 +609,14 @@
         }
 
         acceptBtn.addEventListener('click', () => {
-            if (currentSuggestion && !acceptBtn.disabled) { 
+            if (todayTask && todayTask.dateAdded === getTodayString()) { 
+                if (todayTask.completed) {
+                    console.warn("完了済みのタスクはキャンセルできません。まず未完了にしてください。");
+                    return; 
+                }
+                todayTask = null; 
+                updateTodayTaskDisplay(); 
+            } else if (currentSuggestion && !acceptBtn.disabled) { 
                 setTodayTask(currentSuggestion.text, currentSuggestion.icon);
             }
         });
@@ -744,18 +778,19 @@
         const swipeThreshold = 50; 
 
         function commonSwipeStart(screenX) {
-            if (acceptBtn.disabled) return false; 
+            if (acceptBtn.classList.contains('btn-cancel') && acceptBtn.disabled === false) { 
+                 return false;
+            }
+            if (todayTask && todayTask.dateAdded === getTodayString()) return false; 
+
             touchstartX = screenX;
             suggestionCard.classList.add('dragging');
             return true;
         }
 
         function commonSwipeEnd(screenX) {
-            if (acceptBtn.disabled) { 
-                 suggestionCard.classList.remove('dragging');
-                 suggestionCard.style.transform = '';
-                 return;
-            }
+            if (!suggestionCard.classList.contains('dragging')) return; 
+
             touchendX = screenX;
             handleSwipeGesture(); 
             suggestionCard.classList.remove('dragging');
@@ -805,7 +840,6 @@
                 suggestionCard.style.transform = ''; 
                 return;
             }
-
             if (todayTask && todayTask.dateAdded === getTodayString()) {
                 suggestionCard.style.transform = '';
                 return;
