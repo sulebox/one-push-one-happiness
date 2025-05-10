@@ -10,24 +10,23 @@
     <style>
         /* Clubhouse-inspired Color Palette */
         :root {
-            --bg-main: #f0ede6; /* Off-white, slightly beige background */
-            --bg-card: #ffffff; /* White for cards */
-            --text-primary: #333333; /* Dark gray for primary text */
-            --text-secondary: #5c5c5c; /* Medium gray for secondary text */
-            --accent-primary: #5a8dee; /* A friendly, muted blue for primary actions */
+            --bg-main: #f0ede6; 
+            --bg-card: #ffffff; 
+            --text-primary: #333333; 
+            --text-secondary: #5c5c5c; 
+            --accent-primary: #5a8dee; 
             --accent-primary-hover: #4a7bdc;
-            --accent-secondary: #e7e7e1; /* Light beige for outlines or secondary elements */
+            --accent-secondary: #e7e7e1; 
             --accent-secondary-hover: #dcd9d1;
-            --border-color: #d1cdc7; /* Subtle border color */
-            --highlight-bg: #e8e5dd; /* Highlight for hover, today in calendar */
-            --completed-mark: #50c878; /* A gentle green for completed mark */
-            --icon-color-default: #7b92a8; /* Muted icon color */
+            --border-color: #d1cdc7; 
+            --highlight-bg: #e8e5dd; 
+            --completed-mark: #50c878; 
+            --icon-color-default: #7b92a8; 
             
-            /* Light blue for cancel button */
-            --cancel-button-bg-light-blue: #8cb4f5; /* Lighter blue */
-            --cancel-button-hover-bg-light-blue: #79a3e8; /* Slightly darker light blue for hover */
-            --cancel-button-disabled-bg-light-blue: #adcaf7; /* Even lighter blue for disabled */
-            --cancel-button-disabled-text-light-blue: #607db7; /* Text color for disabled light blue button */
+            --cancel-button-bg-light-blue: #8cb4f5; 
+            --cancel-button-hover-bg-light-blue: #79a3e8; 
+            --cancel-button-disabled-bg-light-blue: #adcaf7; 
+            --cancel-button-disabled-text-light-blue: #607db7; 
         }
 
         body {
@@ -46,14 +45,14 @@
             transform: translateY(-4px);
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.07), 0 6px 12px rgba(0, 0, 0, 0.05);
         }
-        .suggestion-card {
+        .suggestion-card-container {
             cursor: grab;
             user-select: none;
             touch-action: pan-y;
             border: 1px solid var(--border-color);
             background-color: var(--bg-card); 
         }
-        .suggestion-card.dragging {
+        .suggestion-card-container.dragging {
             cursor: grabbing;
             box-shadow: 0 15px 30px rgba(0,0,0,0.1), 0 8px 15px rgba(0,0,0,0.08);
             transform: scale(1.02);
@@ -81,7 +80,7 @@
             background-color: #a0aec0; 
             cursor: not-allowed;
         }
-        .btn-cancel { /* Using light blue for cancel button */
+        .btn-cancel { 
             background-color: var(--cancel-button-bg-light-blue);
             color: white;
         }
@@ -244,6 +243,24 @@
         #suggestionIcon.fas.fa-check-circle {
             color: var(--completed-mark); 
         }
+        #suggestionText {
+            max-height: 8rem; /* Increased max-height for suggestion text */
+            overflow-y: auto;
+            width: 100%; 
+            scrollbar-width: thin; 
+            scrollbar-color: var(--border-color) var(--bg-card); 
+        }
+        #suggestionText::-webkit-scrollbar {
+            width: 6px;
+        }
+        #suggestionText::-webkit-scrollbar-track {
+            background: var(--bg-card);
+            border-radius: 3px;
+        }
+        #suggestionText::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-4 md:p-8">
@@ -258,13 +275,11 @@
         <section class="space-y-6">
             <div class="card p-6 relative">
                 <h2 class="text-2xl font-semibold mb-4">今日のチョイス <i class="fas fa-lightbulb text-yellow-400"></i></h2>
-                <div id="suggestionCard" class="suggestion-card p-6 rounded-lg min-h-[200px] flex flex-col items-center justify-center text-center relative">
-                    <div id="suggestionContent" class="flex flex-col items-center">
-                         <div id="suggestionIcon" class="icon-placeholder mb-4"></div>
+                <div id="suggestionCardContainer" class="suggestion-card-container p-6 rounded-lg min-h-[260px] flex flex-col text-center relative"> 
+                    <div id="suggestionContent" class="flex flex-col items-center flex-grow"> <div id="suggestionIcon" class="icon-placeholder mb-4"></div>
                          <p id="suggestionText" class="text-lg"></p>
                     </div>
-                    <div class="swipe-indicator hidden md:block">
-                        <i class="fas fa-arrows-left-right mr-1"></i> スワイプ or ボタンで次へ
+                    <div class="swipe-indicator hidden md:block mt-2"> <i class="fas fa-arrows-left-right mr-1"></i> スワイプ or ボタンで次へ
                     </div>
                 </div>
                 <div class="flex justify-around mt-4">
@@ -351,7 +366,7 @@
             { id: "s27", text: "急に逆立ちしてみよう", icon: "fas fa-child", category: "挑戦" },
             { id: "s28", text: "朝、スクランブルエッグをつくってみよう", icon: "fas fa-egg", category: "料理" },
             { id: "s29", text: "利き手じゃない方の手で歯磨きしてみよう", icon: "fas fa-tooth", category: "挑戦" },
-            { id: "s30", text: "ご飯食べるとき、TVを消してみよう（いつも消してる人は、いつもより味に集中して食べてみよう）", icon: "fas fa-comment-slash", category: "習慣" },
+            { id: "s30", text: "ご飯食べるとき、TVとかスマホを消してみよう（いつも消してる人は、いつもより味に集中して食べてみよう）", icon: "fas fa-comment-slash", category: "習慣" },
             { id: "s31", text: "ご飯食べるとき、一口30回以上噛んで食べてみよう", icon: "fas fa-grin-tongue", category: "健康" },
             { id: "s32", text: "朝ごはん、いつもパンの人はお米に、いつもお米の人はパンにしてみよう", icon: "fas fa-exchange-alt", category: "食事" },
             { id: "s33", text: "用もないのに誰かに電話かけてみよう", icon: "fas fa-phone-volume", category: "人間関係" },
@@ -364,7 +379,7 @@
             { id: "s40", text: "後ろ向きに歩いてみよう", icon: "fas fa-people-arrows", category: "挑戦" },
             { id: "s41", text: "電車乗るとき切符買ってみよう（いつも切符の人はSuicaゲット）", icon: "fas fa-ticket-alt", category: "体験" },
             { id: "s42", text: "洋服を丁寧に畳んでみよう", icon: "fas fa-tshirt", category: "生活" },
-            { id: "s43", text: "ご飯食べるときTV消してみよう", icon: "fas fa-plug", category: "習慣" },
+            { id: "s43", text: "ご飯食べるとき、TVとかスマホを消してみよう", icon: "fas fa-plug", category: "習慣" },
             { id: "s44", text: "食後に果物食べてみよう", icon: "fas fa-apple-alt", category: "食事" },
             { id: "s45", text: "140文字で物語をつくってみよう", icon: "fas fa-feather-alt", category: "創造性" },
             { id: "s46", text: "断られても良いから電車で席を譲ってみよう", icon: "fas fa-chair", category: "親切" },
@@ -398,7 +413,7 @@
         let calendarDate = new Date();
 
         // --- DOM Elements ---
-        const suggestionCard = document.getElementById('suggestionCard');
+        const suggestionCardContainer = document.getElementById('suggestionCardContainer'); 
         const suggestionIconEl = document.getElementById('suggestionIcon');
         const suggestionTextEl = document.getElementById('suggestionText');
         const acceptBtn = document.getElementById('acceptBtn');
@@ -431,24 +446,49 @@
             const storedCompletedTasks = localStorage.getItem('kokoroOdoruCompletedTasks');
             const storedHistory = localStorage.getItem('kokoroOdoruSuggestionHistory');
             const storedHistoryIndex = localStorage.getItem('kokoroOdoruHistoryIndex');
+            const storedHistoryDate = localStorage.getItem('kokoroOdoruHistoryDate');
             const todayString = getTodayString();
 
             if (storedTodayTask) {
                 const parsedTask = JSON.parse(storedTodayTask);
                 if (parsedTask.dateAdded === todayString) {
                     todayTask = parsedTask;
-                } else {
+                } else { // Task is from a previous day, clear it and its related history
                     localStorage.removeItem('kokoroOdoruTodayTask');
+                    localStorage.removeItem('kokoroOdoruSuggestionHistory');
+                    localStorage.removeItem('kokoroOdoruHistoryIndex');
+                    localStorage.removeItem('kokoroOdoruHistoryDate');
+                    suggestionHistory = [];
+                    historyIndex = -1;
                 }
             }
+            
+            // If no task is set for today, or if the task was cleared because it was old,
+            // then check if the stored history is from today.
+            if (!todayTask) {
+                if (storedHistoryDate === todayString && storedHistory) {
+                    suggestionHistory = JSON.parse(storedHistory);
+                    if (storedHistoryIndex !== null) {
+                        historyIndex = parseInt(storedHistoryIndex, 10);
+                         // Validate historyIndex
+                        if (historyIndex < 0 || historyIndex >= suggestionHistory.length) {
+                            historyIndex = suggestionHistory.length > 0 ? suggestionHistory.length - 1 : -1;
+                        }
+                    } else {
+                         historyIndex = suggestionHistory.length > 0 ? suggestionHistory.length - 1 : -1;
+                    }
+                } else { // History is not from today or doesn't exist, clear it
+                    localStorage.removeItem('kokoroOdoruSuggestionHistory');
+                    localStorage.removeItem('kokoroOdoruHistoryIndex');
+                    localStorage.removeItem('kokoroOdoruHistoryDate');
+                    suggestionHistory = [];
+                    historyIndex = -1;
+                }
+            }
+
+
             if (storedCompletedTasks) {
                 completedTasks = JSON.parse(storedCompletedTasks);
-            }
-            if (storedHistory) {
-                suggestionHistory = JSON.parse(storedHistory);
-            }
-            if (storedHistoryIndex !== null) { 
-                historyIndex = parseInt(storedHistoryIndex, 10);
             }
         }
 
@@ -459,8 +499,11 @@
                 localStorage.removeItem('kokoroOdoruTodayTask');
             }
             localStorage.setItem('kokoroOdoruCompletedTasks', JSON.stringify(completedTasks));
+            
+            // Always save current history state for today
             localStorage.setItem('kokoroOdoruSuggestionHistory', JSON.stringify(suggestionHistory));
             localStorage.setItem('kokoroOdoruHistoryIndex', historyIndex.toString());
+            localStorage.setItem('kokoroOdoruHistoryDate', getTodayString());
         }
 
         function getTodayString() {
@@ -468,17 +511,17 @@
             return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         }
 
-        function displaySuggestion(suggestion) {
-            if (suggestion) {
-                currentSuggestion = suggestion; 
-                suggestionIconEl.className = `icon-placeholder ${suggestion.icon}`;
+        function displaySuggestion(suggestionToDisplay) {
+            currentSuggestion = suggestionToDisplay; // Update global currentSuggestion
+            if (suggestionToDisplay) {
+                suggestionIconEl.className = `icon-placeholder ${suggestionToDisplay.icon}`;
                 suggestionIconEl.style.color = ''; 
-                suggestionTextEl.textContent = suggestion.text;
+                suggestionTextEl.textContent = suggestionToDisplay.text;
             } else {
-                suggestionTextEl.textContent = "提案の履歴がありません。";
-                suggestionIconEl.className = "icon-placeholder fas fa-info-circle";
+                suggestionTextEl.textContent = "提案がありません。";
+                suggestionIconEl.className = "icon-placeholder fas fa-meh";
             }
-            suggestionCard.style.transform = ''; 
+            suggestionCardContainer.style.transform = ''; 
         }
         
         function generateAndShowNewSuggestion() {
@@ -486,17 +529,31 @@
                 displaySuggestion(null); 
                 return;
             }
-            let randomIndex;
+
             let newSuggestion;
-            if (kokoroOdoruSuggestions.length > 1 && suggestionHistory.length > 0) {
-                const lastInHistory = suggestionHistory[suggestionHistory.length -1];
+            let attempts = 0;
+            const maxAttempts = kokoroOdoruSuggestions.length * 3; 
+
+            if (kokoroOdoruSuggestions.length === 1) {
+                newSuggestion = kokoroOdoruSuggestions[0];
+            } else {
+                let randomIndex;
+                // Try to pick a suggestion different from the current one.
+                // currentSuggestion should be up-to-date from displaySuggestion.
+                const previousSuggestionId = currentSuggestion ? currentSuggestion.id : null; 
+                
                 do {
                     randomIndex = Math.floor(Math.random() * kokoroOdoruSuggestions.length);
                     newSuggestion = kokoroOdoruSuggestions[randomIndex];
-                } while (newSuggestion.id === lastInHistory.id);
-            } else {
-                 randomIndex = Math.floor(Math.random() * kokoroOdoruSuggestions.length);
-                 newSuggestion = kokoroOdoruSuggestions[randomIndex];
+                    attempts++;
+                } while (
+                    newSuggestion.id === previousSuggestionId &&
+                    attempts < maxAttempts
+                );
+
+                if (newSuggestion.id === previousSuggestionId && attempts >= maxAttempts) {
+                    console.warn("Could not find a different suggestion from the current one after max attempts. A random one will be shown.");
+                }
             }
 
             if (historyIndex < suggestionHistory.length - 1) {
@@ -505,7 +562,7 @@
             
             suggestionHistory.push(newSuggestion);
             historyIndex = suggestionHistory.length - 1;
-            displaySuggestion(newSuggestion);
+            displaySuggestion(newSuggestion); // This updates currentSuggestion
             saveData(); 
         }
 
@@ -513,23 +570,23 @@
             if (historyIndex < suggestionHistory.length - 1) {
                 historyIndex++;
                 displaySuggestion(suggestionHistory[historyIndex]);
-                saveData();
             } else {
-                generateAndShowNewSuggestion();
+                generateAndShowNewSuggestion(); // This will display and update currentSuggestion
             }
+            saveData(); 
         }
 
         function showPreviousSuggestion() {
             if (historyIndex > 0) {
                 historyIndex--;
                 displaySuggestion(suggestionHistory[historyIndex]);
-                saveData();
+                saveData(); 
             } else {
                 console.log("これ以上前の提案はありません。");
-                suggestionCard.style.transition = 'transform 0.1s ease-in-out';
-                suggestionCard.style.transform = 'translateX(10px)';
-                setTimeout(() => { suggestionCard.style.transform = 'translateX(-10px)'; }, 100);
-                setTimeout(() => { suggestionCard.style.transform = 'translateX(0px)'; }, 200);
+                suggestionCardContainer.style.transition = 'transform 0.1s ease-in-out';
+                suggestionCardContainer.style.transform = 'translateX(10px)';
+                setTimeout(() => { suggestionCardContainer.style.transform = 'translateX(-10px)'; }, 100);
+                setTimeout(() => { suggestionCardContainer.style.transform = 'translateX(0px)'; }, 200);
             }
         }
 
@@ -553,42 +610,43 @@
                 taskCompletedCheckbox.disabled = false;
                 taskCompletedCheckbox.checked = todayTask.completed;
 
-                // Accept button becomes cancel button
                 acceptBtn.innerHTML = '<i class="fas fa-times mr-2"></i>やっぱりやめる';
                 acceptBtn.classList.remove('btn-primary');
                 acceptBtn.classList.add('btn-cancel'); 
                 acceptBtn.disabled = todayTask.completed; 
 
-                // Disable other interactions
                 nextBtn.disabled = true;
                 customTaskInput.disabled = true;
                 addCustomTaskBtn.disabled = true;
                 
-                suggestionTextEl.textContent = "今日の心躍ることは設定済みです！";
+                suggestionTextEl.textContent = "今日の心躍ることは設定済みです！"; // This will be the text in the suggestion card
                 suggestionIconEl.className = "icon-placeholder fas fa-check-circle";
                 suggestionIconEl.style.color = 'var(--completed-mark)';
 
-            } else { // No task set
+            } else { 
                 todayTaskTextEl.textContent = "まだ設定されていません。";
                 todayTaskIconEl.classList.add('hidden');
                 todayTaskIconEl.style.color = ''; 
                 taskCompletedCheckbox.disabled = true;
                 taskCompletedCheckbox.checked = false;
 
-                // Accept button is for accepting a suggestion
                 acceptBtn.innerHTML = '<i class="fas fa-check mr-2"></i>これにする！';
                 acceptBtn.classList.remove('btn-cancel');
                 acceptBtn.classList.add('btn-primary');
                 acceptBtn.disabled = false; 
 
-                // Enable other interactions
                 nextBtn.disabled = false;
                 customTaskInput.disabled = false;
                 addCustomTaskBtn.disabled = false;
                 
-                if (suggestionHistory.length > 0 && historyIndex >= 0 && historyIndex < suggestionHistory.length) {
+                // When no task is set, display the current suggestion from history or generate a new one.
+                // currentSuggestion should be set by displaySuggestion called from init or previous actions.
+                if (currentSuggestion) {
+                    displaySuggestion(currentSuggestion); // Re-display to ensure consistency
+                } else if (suggestionHistory.length > 0 && historyIndex >=0 && historyIndex < suggestionHistory.length) {
                     displaySuggestion(suggestionHistory[historyIndex]);
-                } else if (kokoroOdoruSuggestions.length > 0) {
+                }
+                 else if (kokoroOdoruSuggestions.length > 0) { // Fallback if currentSuggestion is somehow null
                     generateAndShowNewSuggestion();
                 } else {
                      displaySuggestion(null); 
@@ -615,6 +673,15 @@
                     return; 
                 }
                 todayTask = null; 
+                // After clearing task, we need to show a suggestion.
+                // Preferably the one that was current before task was set, or a new one.
+                if (suggestionHistory.length > 0 && historyIndex >= 0 && historyIndex < suggestionHistory.length) {
+                    displaySuggestion(suggestionHistory[historyIndex]);
+                } else if (kokoroOdoruSuggestions.length > 0) {
+                    generateAndShowNewSuggestion();
+                } else {
+                    displaySuggestion(null);
+                }
                 updateTodayTaskDisplay(); 
             } else if (currentSuggestion && !acceptBtn.disabled) { 
                 setTodayTask(currentSuggestion.text, currentSuggestion.icon);
@@ -784,52 +851,52 @@
             if (todayTask && todayTask.dateAdded === getTodayString()) return false; 
 
             touchstartX = screenX;
-            suggestionCard.classList.add('dragging');
+            suggestionCardContainer.classList.add('dragging'); 
             return true;
         }
 
         function commonSwipeEnd(screenX) {
-            if (!suggestionCard.classList.contains('dragging')) return; 
+            if (!suggestionCardContainer.classList.contains('dragging')) return; 
 
             touchendX = screenX;
             handleSwipeGesture(); 
-            suggestionCard.classList.remove('dragging');
+            suggestionCardContainer.classList.remove('dragging'); 
         }
         
-        suggestionCard.addEventListener('touchstart', function(event) {
+        suggestionCardContainer.addEventListener('touchstart', function(event) { 
             if(commonSwipeStart(event.changedTouches[0].screenX)) {
             }
         }, { passive: false }); 
 
-        suggestionCard.addEventListener('touchmove', function(event) {
+        suggestionCardContainer.addEventListener('touchmove', function(event) { 
         }, { passive: false });
 
 
-        suggestionCard.addEventListener('touchend', function(event) {
+        suggestionCardContainer.addEventListener('touchend', function(event) { 
             commonSwipeEnd(event.changedTouches[0].screenX);
         }, { passive: true });
 
-        suggestionCard.addEventListener('mousedown', function(event) {
+        suggestionCardContainer.addEventListener('mousedown', function(event) { 
             if (event.button !== 0) return; 
             if(commonSwipeStart(event.screenX)) {
                 isDragging = true; 
             }
         });
 
-        suggestionCard.addEventListener('mousemove', function(event) {
+        suggestionCardContainer.addEventListener('mousemove', function(event) { 
             if (!isDragging) return;
         });
 
-        suggestionCard.addEventListener('mouseup', function(event) {
+        suggestionCardContainer.addEventListener('mouseup', function(event) { 
             if (!isDragging) return;
             isDragging = false;
             commonSwipeEnd(event.screenX);
         });
-        suggestionCard.addEventListener('mouseleave', function(event) { 
+        suggestionCardContainer.addEventListener('mouseleave', function(event) {  
             if (!isDragging) return;
             isDragging = false;
-            suggestionCard.classList.remove('dragging');
-            suggestionCard.style.transform = ''; 
+            suggestionCardContainer.classList.remove('dragging'); 
+            suggestionCardContainer.style.transform = ''; 
             touchstartX = 0; 
         });
 
@@ -837,32 +904,32 @@
         function handleSwipeGesture() {
             const deltaX = touchendX - touchstartX;
             if (Math.abs(deltaX) < swipeThreshold) {
-                suggestionCard.style.transform = ''; 
+                suggestionCardContainer.style.transform = ''; 
                 return;
             }
             if (todayTask && todayTask.dateAdded === getTodayString()) {
-                suggestionCard.style.transform = '';
+                suggestionCardContainer.style.transform = '';
                 return;
             }
             
             const direction = deltaX < 0 ? -1 : 1; 
 
-            suggestionCard.style.transition = 'transform 0.3s ease-out';
-            suggestionCard.style.transform = `translateX(${direction * 100}%) rotate(${direction * 5}deg)`;
+            suggestionCardContainer.style.transition = 'transform 0.3s ease-out';
+            suggestionCardContainer.style.transform = `translateX(${direction * 100}%) rotate(${direction * 5}deg)`;
             
             setTimeout(() => {
                 if (direction === 1) { 
-                    showNextSuggestion();
+                    showNextSuggestion(); 
                 } else { 
                     showPreviousSuggestion();
                 }
-                suggestionCard.style.transition = 'none'; 
-                suggestionCard.style.transform = `translateX(${-direction * 100}%) rotate(${-direction * 5}deg)`;
+                suggestionCardContainer.style.transition = 'none'; 
+                suggestionCardContainer.style.transform = `translateX(${-direction * 100}%) rotate(${-direction * 5}deg)`;
                 
-                suggestionCard.offsetHeight; 
+                suggestionCardContainer.offsetHeight; 
 
-                suggestionCard.style.transition = 'transform 0.3s ease-out';
-                suggestionCard.style.transform = 'translateX(0) rotate(0)';
+                suggestionCardContainer.style.transition = 'transform 0.3s ease-out';
+                suggestionCardContainer.style.transform = 'translateX(0) rotate(0)';
             }, 300);
             
             touchstartX = 0;
@@ -871,14 +938,18 @@
 
         // --- Initialization ---
         loadData();
-        if (suggestionHistory.length > 0 && historyIndex >= 0 && historyIndex < suggestionHistory.length) {
+        if (todayTask) { 
+            updateTodayTaskDisplay(); // Display task and disable suggestion UI
+        } else if (suggestionHistory.length > 0 && historyIndex >= 0 && historyIndex < suggestionHistory.length) {
             displaySuggestion(suggestionHistory[historyIndex]);
+            updateTodayTaskDisplay(); // Update button states etc. based on no task
         } else if (kokoroOdoruSuggestions.length > 0) {
-            generateAndShowNewSuggestion();
+            generateAndShowNewSuggestion(); // This will call displaySuggestion
+            updateTodayTaskDisplay(); // Update button states etc. based on no task
         } else {
-            displaySuggestion(null); 
+            displaySuggestion(null);
+            updateTodayTaskDisplay(); // Update button states etc. based on no task
         }
-        updateTodayTaskDisplay(); 
         renderCalendar();
     </script>
 </body>
