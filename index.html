@@ -64,6 +64,7 @@
             transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
             border: none; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            white-space: nowrap; /* ボタンテキストの改行を防ぐ */
         }
         .btn:hover {
              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
@@ -186,7 +187,6 @@
             color: var(--icon-color-default); 
             text-shadow: none; 
         }
-        /* New style for suggestion images */
         .suggestion-image {
             width: 100%;
             max-width: 200px;
@@ -286,13 +286,16 @@
                 <h2 class="text-2xl font-semibold mb-4">今日のチョイス <i class="fas fa-lightbulb text-yellow-400"></i></h2>
                 <div id="suggestionCardContainer" class="suggestion-card-container p-6 rounded-lg min-h-[260px] flex flex-col text-center relative"> 
                     <div id="suggestionContent" class="flex flex-col items-center flex-grow">
-                        </div>
+                        <!-- Content will be injected here -->
+                    </div>
                     <div class="swipe-indicator hidden md:block mt-2"> <i class="fas fa-arrows-left-right mr-1"></i> スワイプ or ボタンで次へ
                     </div>
                 </div>
-                <div class="flex justify-around mt-4">
-                    <button id="acceptBtn" class="btn btn-primary w-2/5"><i class="fas fa-check mr-2"></i>これにする！</button>
-                    <button id="nextBtn" class="btn btn-outline w-2/5"><i class="fas fa-arrow-right mr-2"></i>次を見る</button>
+                <!-- Button container updated -->
+                <div class="flex justify-center items-center mt-4 space-x-2 md:space-x-4">
+                    <button id="prevBtn" class="btn btn-outline p-3"><i class="fas fa-arrow-left mr-2"></i>戻る</button>
+                    <button id="acceptBtn" class="btn btn-primary"><i class="fas fa-check mr-2"></i>これにする！</button>
+                    <button id="nextBtn" class="btn btn-outline p-3">次へ<i class="fas fa-arrow-right ml-2"></i></button>
                 </div>
             </div>
 
@@ -300,7 +303,8 @@
                 <h2 class="text-2xl font-semibold mb-4">今日の心躍ること <i class="fas fa-star text-yellow-400"></i></h2>
                 <div id="todayTaskContainer" class="p-4 rounded-lg border min-h-[100px]" style="border-color: var(--border-color); background-color: #f9f9f7;">
                      <div id="todayTaskContent" class="flex flex-col items-center text-center">
-                        </div>
+                        <!-- Content will be injected here -->
+                     </div>
                 </div>
                 <div class="mt-4 flex items-center space-x-3">
                     <input type="checkbox" id="taskCompletedCheckbox" class="h-5 w-5 rounded focus:ring-offset-0" style="border-color: var(--border-color);" disabled>
@@ -346,51 +350,50 @@
         // --- Initial Data ---
         const kokoroOdoruSuggestions = [
             { id: "s1", text: "新しいカフェを開拓してみよう", icon: "fas fa-coffee", category: "外出" },
-            { id: "s2", text: "普段読まないジャンルの本を読んでみよう", icon: "fas fa-book-open", category: "学習" },
-            { id: "s3", text: "公園で30分間日光浴をしてみよう", icon: "fas fa-sun", category: "健康" },
+            { id: "s2", text: "ふだん読まないジャンルの本を読んでみよう", icon: "fas fa-book-open", category: "学習" },
+            { id: "s3", text: "公園で30分くらい日光浴をしてみよう", icon: "fas fa-sun", category: "健康" },
             { id: "s4", text: "誰かに感謝のメッセージを送ってみよう", icon: "fas fa-paper-plane", category: "人間関係" },
             { id: "s5", text: "5分間瞑想してみよう", icon: "fas fa-brain", category: "リラックス" },
             { id: "s6", text: "新しいレシピに挑戦してみよう", icon: "fas fa-utensils", category: "趣味" },
             { id: "s7", text: "近所を散歩して新しいお店を見つけてみよう", icon: "fas fa-map-marked-alt", category: "運動" },
-            { id: "s8", text: "好きな音楽をかけて少し踊ってみよう", icon: "fas fa-music", category: "エンタメ" },
-            { id: "s9", text: "部屋の小さな模様替えをしてみよう", icon: "fas fa-couch", category: "生活" },
+            { id: "s8", text: "好きな音楽をかけてちょっとおどってみよう", icon: "fas fa-music", category: "エンタメ" },
+            { id: "s9", text: "お部屋をすこし模様替えしてみよう", icon: "fas fa-couch", category: "生活" },
             { id: "s10", text: "寝る前に今日あった良いことを3つ書き出してみよう", icon: "fas fa-pencil-alt", category: "自己啓発" },
             { id: "s11", text: "空の写真を撮ってみよう", icon: "fas fa-camera-retro", category: "趣味" },
-            { id: "s12", text: "植物に水をやり、観察してみよう", icon: "fas fa-seedling", category: "癒し" },
+            { id: "s12", text: "植物に水をあげてちょっと観察してみよう", icon: "fas fa-seedling", category: "癒し" },
             { id: "s13", text: "15分早く起きて静かな時間を過ごしてみよう", icon: "fas fa-clock", category: "習慣" },
             { id: "s14", text: "手書きで短い手紙やメモを書いてみよう", icon: "fas fa-pen-nib", category: "表現" },
             { id: "s15", text: "行ったことのないスーパーマーケットに行ってみよう", icon: "fas fa-shopping-cart", category: "発見" },
             { id: "s16", text: "蝉の抜け殻触ってみよう", icon: "fas fa-bug", category: "自然" },
             { id: "s17", text: "利き手じゃない方でごはんを食べてみよう", icon: "fas fa-utensils", category: "挑戦" },
             { id: "s18", text: "1分間空をみあげてみよう", icon: "fas fa-cloud", category: "リラックス" },
-            { id: "s19", text: "会社とか学校ある人はいつもより10分早くお家出てみよう お休みの人はお休みじゃないときよりも早く起きてみよう", icon: "fas fa-door-open", category: "習慣" },
+            { id: "s19", text: "いつもより10分早くお家出てみよう", icon: "fas fa-door-open", category: "習慣" },
             { id: "s20", text: "はじめてのお店に入ってみよう", icon: "fas fa-store", category: "発見" },
             { id: "s21", text: "朝ジョギングしてみよう P.S. ウォーキングでもいいよ", icon: "fas fa-running", category: "運動" },
-            { id: "s22", text: "朝ごはんにミューズリーたべよう（ミューズリーってなんだろう？）", icon: "fas fa-bowl-rice", category: "食事" },
+            { id: "s22", text: "朝ごはんにミューズリーたべよう（ミューズリー？）", icon: "fas fa-bowl-rice", category: "食事" },
             { id: "s23", text: "誰かにお手紙を書いてみよう", icon: "fas fa-envelope-open-text", category: "人間関係" },
             { id: "s24", text: "いつもとちがう道通って目的地行こう", icon: "fas fa-route", category: "発見" },
             { id: "s25", text: "ふだん苦手であんまし食べないもの食べてみよう", icon: "fas fa-pepper-hot", category: "挑戦" },
-            { id: "s26", text: "シャンプーでアトムやってみよう", icon: "fas fa-bath", category: "遊び心" },
             { id: "s27", text: "急に逆立ちしてみよう", icon: "fas fa-child", category: "挑戦" },
             { id: "s28", text: "朝、スクランブルエッグをつくってみよう", icon: "fas fa-egg", category: "料理" },
             { id: "s29", text: "利き手じゃない方の手で歯磨きしてみよう", icon: "fas fa-tooth", category: "挑戦" },
-            { id: "s30", text: "ご飯食べるとき、TVとかスマホを消してみよう（いつも消してる人は、いつもより味に集中して食べてみよう）", icon: "fas fa-comment-slash", category: "習慣" },
+            { id: "s30", text: "ご飯食べるとき、TVとかスマホを消してみよう", icon: "fas fa-comment-slash", category: "習慣" },
             { id: "s31", text: "ご飯食べるとき、一口30回以上噛んで食べてみよう", icon: "fas fa-grin-tongue", category: "健康" },
-            { id: "s32", text: "朝ごはん、いつもパンの人はお米に、いつもお米の人はパンにしてみよう", icon: "fas fa-exchange-alt", category: "食事" },
+            { id: "s32", text: "朝ごはん、いつもパンの人はお米にしてみよう", icon: "fas fa-exchange-alt", category: "食事" },
             { id: "s33", text: "用もないのに誰かに電話かけてみよう", icon: "fas fa-phone-volume", category: "人間関係" },
             { id: "s34", text: "街で見かけた人の人生について想像してみよう", icon: "fas fa-theater-masks", category: "想像力" },
-            { id: "s35", text: "靴下履かないで靴履いてみよう", icon: "fas fa-shoe-prints", category: "感覚" },
-            { id: "s36", text: "散歩中の犬を撫でさせてもらおう", icon: "fas fa-dog", category: "交流" },
-            { id: "s37", text: "ものを買った後にありがとうって言ってみよう", icon: "fas fa-handshake", category: "感謝" },
+            { id: "s35", text: "くつした履かないでくつ履いてみよう", icon: "fas fa-shoe-prints", category: "感覚" },
+            { id: "s36", text: "散歩中の犬をなでさせてもらおう", icon: "fas fa-dog", category: "交流" },
+            { id: "s37", text: "ものを買ったあとにありがとうって言ってみよう", icon: "fas fa-handshake", category: "感謝" },
             { id: "s38", text: "トイレをピカピカにしてみよう", icon: "fas fa-toilet", category: "生活" },
             { id: "s39", text: "朝1時間だけはやく起きてみよう", icon: "fas fa-hourglass-start", category: "習慣" },
-            { id: "s40", text: "後ろ向きに歩いてみよう", icon: "fas fa-people-arrows", category: "挑戦" },
-            { id: "s41", text: "電車乗るとき切符買ってみよう（いつも切符の人はSuicaゲット）", icon: "fas fa-ticket-alt", category: "体験" },
-            { id: "s42", text: "洋服を丁寧に畳んでみよう", icon: "fas fa-tshirt", category: "生活" },
-            { id: "s43", text: "ご飯食べるとき、TVとかスマホを消してみよう", icon: "fas fa-plug", category: "習慣" },
+            { id: "s40", text: "うしろ向きに歩いてみよう", icon: "fas fa-people-arrows", category: "挑戦" },
+            { id: "s41", text: "電車乗るとき切符買ってみよう", icon: "fas fa-ticket-alt", category: "体験" },
+            { id: "s42", text: "洋服を丁寧にたたんでみよう", icon: "fas fa-tshirt", category: "生活" },
+            { id: "s43", text: "ごはん食べるとき、TVとかスマホを消してみよう", icon: "fas fa-plug", category: "習慣" },
             { id: "s44", text: "食後に果物食べてみよう", icon: "fas fa-apple-alt", category: "食事" },
             { id: "s45", text: "140文字で物語をつくってみよう", icon: "fas fa-feather-alt", category: "創造性" },
-            { id: "s46", text: "断られても良いから電車で席を譲ってみよう", icon: "fas fa-chair", category: "親切" },
+            { id: "s46", text: "断られても良いから電車で席をゆずってみよう", icon: "fas fa-chair", category: "親切" },
             { id: "s47", text: "自然の多いところに行ってみよう", icon: "fas fa-tree", category: "癒し" },
             { id: "s48", text: "雨ん中傘をささずに歩いてみよう", icon: "fas fa-cloud-showers-heavy", category: "挑戦" },
             { id: "s49", text: "初めて入る映画館で映画を観てみよう", icon: "fas fa-film", category: "エンタメ" },
@@ -400,13 +403,13 @@
             { id: "s53", text: "外に出て、木の葉に触れてみよう", icon: "fas fa-leaf", category: "自然" },
             { id: "s54", text: "3分間きっちり歯を磨いてみよう", icon: "fas fa-stopwatch", category: "健康" },
             { id: "s55", text: "街の中で色々な匂いに意識を向けてみよう", icon: "fas fa-wind", category: "感覚" },
-            { id: "s56", text: "ふだん聴かない種類の音楽を聴いてみよう（ロック好きの人はクラッシックとかね）", icon: "fas fa-headphones-alt", category: "発見" },
-            { id: "s57", text: "お花を一輪へやにかざってみよう", icon: "fas fa-spa", category: "癒し" },
+            { id: "s56", text: "ふだん聴かないジャンルの音楽を聴いてみよう", icon: "fas fa-headphones-alt", category: "発見" },
+            { id: "s57", text: "お花を一輪、へやにかざってみよう", icon: "fas fa-spa", category: "癒し" },
             { id: "s58", text: "まえの日見た夢をノートに書きとめよう", icon: "fas fa-moon", category: "自己理解" },
             { id: "s59", text: "朝10分瞑想してみよう", icon: "fas fa-peace", category: "リラックス" },
             { id: "s60", text: "湯船に温泉の素入れてみよう", icon: "fas fa-hot-tub", category: "リラックス" },
             { id: "s61", text: "ハリウッド映画みたいにお風呂を泡泡にしてみよう", icon: "fas fa-soap", category: "遊び心" },
-            { id: "s62", text: "空の色に名前をつけてみよう（皐月晴れブルーとか羊グレーとかね）", icon: "fas fa-palette", category: "創造性" },
+            { id: "s62", text: "空の色に名前をつけてみよう", icon: "fas fa-palette", category: "創造性" },
             { id: "s63", text: "ごはんの時にきちんと“いただきます”って言ってみよう", icon: "fas fa-hands-praying", category: "感謝" },
             { id: "s64", text: "ノンカフェインのコーヒー夜に飲んでみよう", icon: "fas fa-mug-hot", category: "体験" },
             { id: "s65", text: "ドングリを3個ひろってみよう", icon: "fas fa-fan", category: "自然" }
@@ -425,6 +428,7 @@
         const suggestionContentEl = document.getElementById('suggestionContent');
         const acceptBtn = document.getElementById('acceptBtn');
         const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn'); // New button
         
         const todayTaskContentEl = document.getElementById('todayTaskContent');
         const taskCompletedCheckbox = document.getElementById('taskCompletedCheckbox');
@@ -434,8 +438,8 @@
 
         const calendarGrid = document.getElementById('calendarGrid');
         const calendarMonthYearEl = document.getElementById('calendarMonthYear');
-        const prevMonthBtn = document.getElementById('prevMonthBtn');
-        const nextMonthBtn = document.getElementById('nextMonthBtn');
+        const prevMonthBtnCalendar = document.getElementById('prevMonthBtn');
+        const nextMonthBtnCalendar = document.getElementById('nextMonthBtn');
 
         const taskModal = document.getElementById('taskModal');
         const closeModalBtn = document.getElementById('closeModalBtn');
@@ -674,6 +678,7 @@
                 acceptBtn.disabled = todayTask.completed; 
 
                 nextBtn.disabled = true;
+                prevBtn.disabled = true; // Disable prev button
                 customTaskInput.disabled = true;
                 addCustomTaskBtn.disabled = true;
                 
@@ -696,6 +701,7 @@
                 acceptBtn.disabled = !currentSuggestion; 
 
                 nextBtn.disabled = false;
+                prevBtn.disabled = false; // Enable prev button
                 customTaskInput.disabled = false;
                 addCustomTaskBtn.disabled = false;
                 
@@ -747,6 +753,12 @@
         nextBtn.addEventListener('click', () => {
             if (!nextBtn.disabled) { 
                  showNextSuggestion();
+            }
+        });
+        
+        prevBtn.addEventListener('click', () => {
+            if (!prevBtn.disabled) {
+                showPreviousSuggestion();
             }
         });
 
@@ -847,12 +859,12 @@
             }
         }
 
-        prevMonthBtn.addEventListener('click', () => {
+        prevMonthBtnCalendar.addEventListener('click', () => {
             calendarDate.setMonth(calendarDate.getMonth() - 1);
             renderCalendar();
         });
 
-        nextMonthBtn.addEventListener('click', () => {
+        nextMonthBtnCalendar.addEventListener('click', () => {
             calendarDate.setMonth(calendarDate.getMonth() + 1);
             renderCalendar();
         });
