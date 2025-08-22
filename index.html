@@ -186,6 +186,15 @@
             color: var(--icon-color-default); 
             text-shadow: none; 
         }
+        /* New style for suggestion images */
+        .suggestion-image {
+            width: 100%;
+            max-width: 200px;
+            height: auto;
+            max-height: 150px;
+            object-fit: contain;
+            margin-bottom: 1rem;
+        }
         .swipe-indicator {
             position: absolute;
             bottom: 12px;
@@ -276,9 +285,8 @@
             <div class="card p-6 relative">
                 <h2 class="text-2xl font-semibold mb-4">今日のチョイス <i class="fas fa-lightbulb text-yellow-400"></i></h2>
                 <div id="suggestionCardContainer" class="suggestion-card-container p-6 rounded-lg min-h-[260px] flex flex-col text-center relative"> 
-                    <div id="suggestionContent" class="flex flex-col items-center flex-grow"> <div id="suggestionIcon" class="icon-placeholder mb-4"></div>
-                         <p id="suggestionText" class="text-lg"></p>
-                    </div>
+                    <div id="suggestionContent" class="flex flex-col items-center flex-grow">
+                        </div>
                     <div class="swipe-indicator hidden md:block mt-2"> <i class="fas fa-arrows-left-right mr-1"></i> スワイプ or ボタンで次へ
                     </div>
                 </div>
@@ -291,8 +299,8 @@
             <div class="card p-6">
                 <h2 class="text-2xl font-semibold mb-4">今日の心躍ること <i class="fas fa-star text-yellow-400"></i></h2>
                 <div id="todayTaskContainer" class="p-4 rounded-lg border min-h-[100px]" style="border-color: var(--border-color); background-color: #f9f9f7;">
-                    <p id="todayTaskText" class="text-lg"></p>
-                    <div id="todayTaskIcon" class="icon-placeholder my-2 hidden"></div>
+                     <div id="todayTaskContent" class="flex flex-col items-center text-center">
+                        </div>
                 </div>
                 <div class="mt-4 flex items-center space-x-3">
                     <input type="checkbox" id="taskCompletedCheckbox" class="h-5 w-5 rounded focus:ring-offset-0" style="border-color: var(--border-color);" disabled>
@@ -414,14 +422,11 @@
 
         // --- DOM Elements ---
         const suggestionCardContainer = document.getElementById('suggestionCardContainer'); 
-        const suggestionIconEl = document.getElementById('suggestionIcon');
-        const suggestionTextEl = document.getElementById('suggestionText');
+        const suggestionContentEl = document.getElementById('suggestionContent');
         const acceptBtn = document.getElementById('acceptBtn');
         const nextBtn = document.getElementById('nextBtn');
-
-        const todayTaskContainer = document.getElementById('todayTaskContainer');
-        const todayTaskTextEl = document.getElementById('todayTaskText');
-        const todayTaskIconEl = document.getElementById('todayTaskIcon');
+        
+        const todayTaskContentEl = document.getElementById('todayTaskContent');
         const taskCompletedCheckbox = document.getElementById('taskCompletedCheckbox');
 
         const customTaskInput = document.getElementById('customTaskInput');
@@ -440,6 +445,12 @@
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
         // --- Functions ---
+        
+        function isImageSuggestion(suggestionId) {
+            if (!suggestionId) return false;
+            const idNumber = parseInt(suggestionId.substring(1), 10);
+            return idNumber >= 16 && idNumber <= 25;
+        }
 
         function loadData() {
             const storedTodayTask = localStorage.getItem('kokoroOdoruTodayTask');
@@ -524,17 +535,35 @@
         }
 
         function displaySuggestion(suggestionToDisplay) {
-            currentSuggestion = suggestionToDisplay; 
+            currentSuggestion = suggestionToDisplay;
+            suggestionContentEl.innerHTML = ''; // Clear previous content
+
             if (suggestionToDisplay) {
-                suggestionIconEl.className = `icon-placeholder ${suggestionToDisplay.icon}`;
-                suggestionIconEl.style.color = ''; 
-                suggestionTextEl.textContent = suggestionToDisplay.text;
+                if (isImageSuggestion(suggestionToDisplay.id)) {
+                    const img = document.createElement('img');
+                    img.src = `${suggestionToDisplay.id}.png`;
+                    img.alt = suggestionToDisplay.text;
+                    img.className = 'suggestion-image';
+                    suggestionContentEl.appendChild(img);
+                } else {
+                    const icon = document.createElement('div');
+                    icon.className = `icon-placeholder ${suggestionToDisplay.icon}`;
+                    suggestionContentEl.appendChild(icon);
+                }
+                const text = document.createElement('p');
+                text.id = 'suggestionText';
+                text.className = 'text-lg';
+                text.textContent = suggestionToDisplay.text;
+                suggestionContentEl.appendChild(text);
             } else {
-                suggestionTextEl.textContent = "提案がありません。";
-                suggestionIconEl.className = "icon-placeholder fas fa-meh";
+                const text = document.createElement('p');
+                text.textContent = "提案がありません。";
+                suggestionContentEl.appendChild(text);
+                const icon = document.createElement('div');
+                icon.className = "icon-placeholder fas fa-meh";
+                suggestionContentEl.insertBefore(icon, text);
             }
-            suggestionCardContainer.style.transform = ''; 
-            // console.log("Displayed:", currentSuggestion ? currentSuggestion.text : "None", "History Index:", historyIndex, "History Length:", suggestionHistory.length);
+            suggestionCardContainer.style.transform = '';
         }
         
         function generateAndShowNewSuggestion() {
@@ -545,7 +574,7 @@
 
             let newSuggestion;
             let attempts = 0;
-            const maxAttempts = kokoroOdoruSuggestions.length * 2 + 5; // Increased attempts slightly
+            const maxAttempts = kokoroOdoruSuggestions.length * 2 + 5; 
 
             const avoidSuggestionId = currentSuggestion ? currentSuggestion.id : null;
 
@@ -567,7 +596,7 @@
                     let currentIdxInMasterList = kokoroOdoruSuggestions.findIndex(s => s.id === avoidSuggestionId);
                     if (currentIdxInMasterList !== -1) { 
                         newSuggestion = kokoroOdoruSuggestions[(currentIdxInMasterList + 1) % kokoroOdoruSuggestions.length];
-                    } else { // Fallback if current not in master, pick first one not matching current
+                    } else { 
                         newSuggestion = kokoroOdoruSuggestions.find(s => s.id !== avoidSuggestionId) || kokoroOdoruSuggestions[0];
                     }
                 }
@@ -607,23 +636,35 @@
             }
         }
 
-
         function updateTodayTaskDisplay() {
+            todayTaskContentEl.innerHTML = ''; // Clear content
+
             if (todayTask) {
-                todayTaskTextEl.textContent = todayTask.text;
-                if (todayTask.icon) {
-                    todayTaskIconEl.className = `icon-placeholder ${todayTask.icon}`;
-                    todayTaskIconEl.classList.remove('hidden');
+                if (isImageSuggestion(todayTask.id)) {
+                    const img = document.createElement('img');
+                    img.src = `${todayTask.id}.png`;
+                    img.alt = todayTask.text;
+                    img.className = 'suggestion-image mx-auto'; // Center the image
+                    todayTaskContentEl.appendChild(img);
+                } else if (todayTask.icon) {
+                    const icon = document.createElement('div');
+                    icon.className = `icon-placeholder ${todayTask.icon}`;
                     if (todayTask.icon === 'fas fa-star') {
-                        todayTaskIconEl.style.color = 'var(--accent-primary)'; 
-                    } else {
-                        todayTaskIconEl.style.color = ''; 
+                        icon.style.color = 'var(--accent-primary)'; 
                     }
-                } else { 
-                    todayTaskIconEl.className = 'icon-placeholder fas fa-star'; 
-                    todayTaskIconEl.style.color = 'var(--accent-primary)';
-                    todayTaskIconEl.classList.remove('hidden');
+                    todayTaskContentEl.appendChild(icon);
+                } else {
+                    const icon = document.createElement('div');
+                    icon.className = 'icon-placeholder fas fa-star'; 
+                    icon.style.color = 'var(--accent-primary)';
+                    todayTaskContentEl.appendChild(icon);
                 }
+
+                const text = document.createElement('p');
+                text.className = 'text-lg mt-2';
+                text.textContent = todayTask.text;
+                todayTaskContentEl.appendChild(text);
+                
                 taskCompletedCheckbox.disabled = false;
                 taskCompletedCheckbox.checked = todayTask.completed;
 
@@ -636,27 +677,29 @@
                 customTaskInput.disabled = true;
                 addCustomTaskBtn.disabled = true;
                 
-                suggestionTextEl.textContent = "今日の心躍ることは設定済みです！"; 
-                suggestionIconEl.className = "icon-placeholder fas fa-check-circle";
-                suggestionIconEl.style.color = 'var(--completed-mark)';
+                suggestionContentEl.innerHTML = `
+                    <div class="icon-placeholder fas fa-check-circle" style="color: var(--completed-mark);"></div>
+                    <p id="suggestionText" class="text-lg">今日の心躍ることは設定済みです！</p>`;
 
             } else { 
-                todayTaskTextEl.textContent = "まだ設定されていません。";
-                todayTaskIconEl.classList.add('hidden');
-                todayTaskIconEl.style.color = ''; 
+                const text = document.createElement('p');
+                text.className = 'text-lg';
+                text.textContent = "まだ設定されていません。";
+                todayTaskContentEl.appendChild(text);
+                
                 taskCompletedCheckbox.disabled = true;
                 taskCompletedCheckbox.checked = false;
 
                 acceptBtn.innerHTML = '<i class="fas fa-check mr-2"></i>これにする！';
                 acceptBtn.classList.remove('btn-cancel');
                 acceptBtn.classList.add('btn-primary');
-                acceptBtn.disabled = !currentSuggestion; // Disable if no current suggestion
+                acceptBtn.disabled = !currentSuggestion; 
 
                 nextBtn.disabled = false;
                 customTaskInput.disabled = false;
                 addCustomTaskBtn.disabled = false;
                 
-                if (currentSuggestion) { // If there's a current suggestion (from history or newly generated)
+                if (currentSuggestion) { 
                     displaySuggestion(currentSuggestion);
                 } else if (suggestionHistory.length > 0 && historyIndex >=0 && historyIndex < suggestionHistory.length) {
                     displaySuggestion(suggestionHistory[historyIndex]);
@@ -669,9 +712,10 @@
             saveData(); 
             renderCalendar();
         }
-
-        function setTodayTask(text, icon = null) {
+        
+        function setTodayTask(id, text, icon = null) {
             todayTask = {
+                id: id,
                 text: text,
                 icon: icon || 'fas fa-star', 
                 completed: false,
@@ -696,7 +740,7 @@
                 }
                 updateTodayTaskDisplay(); 
             } else if (currentSuggestion && !acceptBtn.disabled) { 
-                setTodayTask(currentSuggestion.text, currentSuggestion.icon);
+                setTodayTask(currentSuggestion.id, currentSuggestion.text, currentSuggestion.icon);
             }
         });
 
@@ -710,7 +754,7 @@
             if (addCustomTaskBtn.disabled) return;
             const customText = customTaskInput.value.trim();
             if (customText) {
-                setTodayTask(customText); 
+                setTodayTask(null, customText); // Custom tasks have no ID
                 customTaskInput.value = '';
             } else {
                 console.warn("タスク内容を入力してください。");
@@ -727,6 +771,7 @@
                     );
                     if (existingEntryIndex === -1) {
                         completedTasks.push({
+                            id: todayTask.id, // Save id for image lookup later
                             date: todayString,
                             taskText: todayTask.text,
                             icon: todayTask.icon
@@ -823,15 +868,17 @@
                     const listItem = document.createElement('div');
                     listItem.className = 'task-list-item flex items-center';
                     
-                    let iconHtml = '';
-                    let iconColor = task.icon === 'fas fa-star' ? 'var(--accent-primary)' : 'var(--icon-color-default)';
-                    if (task.icon) {
-                        iconHtml = `<i class="${task.icon} mr-3 text-xl" style="color: ${iconColor};"></i>`;
+                    let visualHtml = '';
+                    if (isImageSuggestion(task.id)) {
+                         visualHtml = `<img src="${task.id}.png" alt="${task.taskText}" class="w-8 h-8 object-contain mr-3">`;
+                    } else if (task.icon) {
+                        let iconColor = task.icon === 'fas fa-star' ? 'var(--accent-primary)' : 'var(--icon-color-default)';
+                        visualHtml = `<i class="${task.icon} mr-3 text-xl" style="color: ${iconColor};"></i>`;
                     } else { 
-                        iconHtml = `<i class="fas fa-star mr-3 text-xl" style="color: var(--accent-primary);"></i>`;
+                        visualHtml = `<i class="fas fa-star mr-3 text-xl" style="color: var(--accent-primary);"></i>`;
                     }
                     
-                    listItem.innerHTML = `${iconHtml} <span class="">${task.taskText}</span>`;
+                    listItem.innerHTML = `${visualHtml} <span class="">${task.taskText}</span>`;
                     modalTaskListEl.appendChild(listItem);
                 });
             } else {
@@ -924,20 +971,20 @@
                 return;
             }
             
-            const direction = deltaX < 0 ? -1 : 1; 
+            const direction = deltaX < 0 ? 1 : -1; // Adjusted for natural swipe (swipe left -> next)
 
             suggestionCardContainer.style.transition = 'transform 0.3s ease-out';
-            suggestionCardContainer.style.transform = `translateX(${direction * 100}%) rotate(${direction * 5}deg)`;
+            suggestionCardContainer.style.transform = `translateX(${direction * -100}%) rotate(${direction * -5}deg)`;
             
             setTimeout(() => {
-                if (direction === 1) { // Right swipe
+                if (direction === 1) { // Left swipe
                     showNextSuggestion(); 
-                } else { // Left swipe
+                } else { // Right swipe
                     showPreviousSuggestion();
                 }
                 // Animate in from opposite side
                 suggestionCardContainer.style.transition = 'none'; 
-                suggestionCardContainer.style.transform = `translateX(${-direction * 100}%) rotate(${-direction * 5}deg)`;
+                suggestionCardContainer.style.transform = `translateX(${direction * 100}%) rotate(${direction * 5}deg)`;
                 
                 suggestionCardContainer.offsetHeight; // Force reflow to apply the transform before transition
 
