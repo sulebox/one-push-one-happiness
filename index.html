@@ -453,7 +453,8 @@
         function isImageSuggestion(suggestionId) {
             if (!suggestionId) return false;
             const idNumber = parseInt(suggestionId.substring(1), 10);
-            return idNumber >= 16 && idNumber <= 25;
+            // Updated range to include s27-s31
+            return (idNumber >= 16 && idNumber <= 25) || (idNumber >= 27 && idNumber <= 31);
         }
 
         function loadData() {
