@@ -189,9 +189,9 @@
         }
         .suggestion-image {
             width: 100%;
-            max-width: 320px;
+            max-width: 360px; /* Increased size */
             height: auto;
-            max-height: 240px;
+            max-height: 280px; /* Increased size */
             object-fit: contain;
             margin: 0 auto; /* Center image */
         }
@@ -284,7 +284,7 @@
         <section class="space-y-6">
             <div class="card p-6 relative">
                 <h2 class="text-2xl font-semibold mb-4">今日のチョイス <i class="fas fa-lightbulb text-yellow-400"></i></h2>
-                <div id="suggestionCardContainer" class="suggestion-card-container p-6 rounded-lg min-h-[340px] flex flex-col text-center relative"> 
+                <div id="suggestionCardContainer" class="suggestion-card-container p-6 rounded-lg min-h-[380px] flex flex-col text-center relative"> 
                     <div id="suggestionContent" class="flex flex-col items-center flex-grow justify-center">
                         <!-- Content will be injected here -->
                     </div>
@@ -412,7 +412,13 @@
             { id: "s62", text: "空の色に名前をつけてみよう", icon: "fas fa-palette", category: "創造性" },
             { id: "s63", text: "ごはんの時にきちんと“いただきます”って言ってみよう", icon: "fas fa-hands-praying", category: "感謝" },
             { id: "s64", text: "ノンカフェインのコーヒー夜に飲んでみよう", icon: "fas fa-mug-hot", category: "体験" },
-            { id: "s65", text: "ドングリを3個ひろってみよう", icon: "fas fa-fan", category: "自然" }
+            { id: "s65", text: "ドングリを3個ひろってみよう", icon: "fas fa-fan", category: "自然" },
+            { id: "s66", text: "コンビニでふだん買わないドリンクを一本選んでみよう", icon: "fas fa-glass-martini-alt", category: "体験" },
+            { id: "s67", text: "朝マックしてみよう", icon: "fas fa-hamburger", category: "食事" },
+            { id: "s68", text: "朝日を見てから学校とか会社に行ってみよう", icon: "fas fa-sunrise", category: "習慣" },
+            { id: "s69", text: "空港に遊びに行ってみよう", icon: "fas fa-plane-departure", category: "外出" },
+            { id: "s70", text: "裸足でジョギングしてみよう", icon: "fas fa-shoe-prints", category: "挑戦" },
+            { id: "s71", text: "大きなキャンバスに絵を描いてみよう", icon: "fas fa-paint-brush", category: "創造性" }
         ];
 
         // --- State Variables ---
@@ -454,7 +460,7 @@
             if (!suggestionId) return false;
             const idNumber = parseInt(suggestionId.substring(1), 10);
             // Updated range to include all image IDs
-            return (idNumber >= 1 && idNumber <= 25) || (idNumber >= 27 && idNumber <= 65);
+            return (idNumber >= 1 && idNumber <= 25) || (idNumber >= 27 && idNumber <= 71);
         }
 
         function loadData() {
